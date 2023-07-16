@@ -30,7 +30,7 @@ impl Cpu<'_> {
     pub fn create(memory: &mut Memory) -> Cpu {
         Cpu {
             // registers
-            pc: 0xfffc,
+            pc: 0,
             ac: 0,
             x: 0,
             y: 0,
@@ -43,8 +43,8 @@ impl Cpu<'_> {
     }
 
     pub fn reset(&mut self) {
-        // init reset vector at $FFFC to point to $E000 for initial PC
-        self.mem.write_u16(VECTOR_RES, 0xE000);
+        // load address from reset vector $FFFC and store it into PC
+        self.pc = self.mem.read_u16(VECTOR_RES);
     }
 }
 

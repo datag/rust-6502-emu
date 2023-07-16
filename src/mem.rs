@@ -25,7 +25,7 @@ impl Memory {
     }
 
     pub fn read_u16(&self, addr: usize) -> u16 {
-        ((self.data[addr + 0] as u16) << 8) | (self.data[addr + 1] as u16)
+        ((self.data[addr + 1] as u16) << 8) | (self.data[addr + 0] as u16)
     }
 
     pub fn write_u8(&mut self, addr: usize, value: u8) {
