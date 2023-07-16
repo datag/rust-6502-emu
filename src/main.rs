@@ -13,4 +13,8 @@ fn main() {
     cpu.reset();
 
     println!("CPU values: {:#?}", cpu);
+
+
+    //println!("Mem @ 0xfffc: {:X}{:X}", mem.read_u8(0xfffc), mem.read_u8(0xfffd));
+    println!("Mem @ 0xfffc: {:X}", mem.read_u16(0xfffc));
 }

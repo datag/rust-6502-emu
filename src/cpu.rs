@@ -44,8 +44,9 @@ impl Cpu<'_> {
 
     pub fn reset(&mut self) {
         // init reset vector at $FFFC to point to $E000 for initial PC
-        self.mem.data[VECTOR_RES + 0x00] = 0x00;
-        self.mem.data[VECTOR_RES + 0x01] = 0xE0;
+    //     self.mem.write_u8(VECTOR_RES + 0x00, 0x12);
+    //     self.mem.write_u8(VECTOR_RES + 0x01, 0xE0);
+        self.mem.write_u16(VECTOR_RES, 0xE412);
     }
 }
 
