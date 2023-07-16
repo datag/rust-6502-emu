@@ -4,7 +4,6 @@ use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xfffc;
 
-// #[derive(Debug)]
 pub struct Cpu<'a> {
     pub pc: u16,
     pub ac: u8,
