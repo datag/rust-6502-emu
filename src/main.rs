@@ -1,10 +1,10 @@
-use crate::cpu::create_cpu;
+use crate::cpu::Cpu;
 
 pub mod cpu;
 
 fn main() {
     println!("rust-6502-emu");
 
-    let cpu = create_cpu();
+    let cpu = Cpu::create();
     println!("CPU values: {:?}", cpu);
 }
