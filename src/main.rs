@@ -1,4 +1,4 @@
-use crate::cpu::Cpu;
+use crate::cpu::{Cpu, VECTOR_RES};
 use crate::mem::Memory;
 
 pub mod cpu;
@@ -11,8 +11,8 @@ fn main() {
     let mut mem = Memory::create();
     mem.init();
 
-    println!("Mem @ 0xfffc: 0x{:02X}  0xfffd: 0x{:02X}", mem.read_u8(0xfffc), mem.read_u8(0xfffd));
-    println!("Mem @ 0xfffc: 0x{:04X}", mem.read_u16(0xfffc));
+    println!("Mem @ 0xfffc: 0x{:02X}  0xfffd: 0x{:02X}", mem.read_u8(VECTOR_RES), mem.read_u8(VECTOR_RES + 1));
+    println!("Mem @ 0x{:04X}: 0x{:04X}", VECTOR_RES, mem.read_u16(VECTOR_RES));
 
 
     let mut cpu = Cpu::create(&mut mem);
