@@ -2,7 +2,7 @@
 use std::fmt;
 use crate::mem::Memory;
 
-pub const VECTOR_RES: usize = 0xfffc;
+pub const VECTOR_RES: u16 = 0xfffc;
 
 // #[derive(Debug)]
 pub struct Cpu<'a> {
