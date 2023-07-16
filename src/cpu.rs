@@ -16,18 +16,8 @@ pub struct Cpu<'a> {
     pub mem: &'a mut Memory,
 }
 
-impl fmt::Debug for Cpu<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Cpu")
-            .field("PC", &format!("0x{:04X}", self.pc))
-            .field("AC", &format!("0x{:02X}", self.ac))
-            // TODO 
-            .finish()
-    }
-}
-
 impl Cpu<'_> {
-    pub fn create(memory: &mut Memory) -> Cpu {
+    pub fn create(mem: &mut Memory) -> Cpu {
         Cpu {
             // registers
             pc: 0,
@@ -38,7 +28,7 @@ impl Cpu<'_> {
             sp: 0,
 
             // memory
-            mem: memory,
+            mem,
         }
     }
 
@@ -46,6 +36,42 @@ impl Cpu<'_> {
         // load address from reset vector $FFFC and store it into PC
         self.pc = self.mem.read_u16(VECTOR_RES);
     }
+
+    pub fn exec(&mut self, max_cycles: u16) {
+        let mut cycles = max_cycles;
+        let mut ins: u8;
+
+        while cycles > 0 {
+            // load instruction from mem at PC
+            ins = self.mem.read_u8(self.pc);
+
+            // increment PC
+            self.pc += 1;
+
+            match ins {
+                0x00 => {
+                    println!("got 0x00");
+                    self.pc += 1;
+                    cycles -= 2;
+                }
+                0x01 => {
+                    println!("got 0x01");
+                    self.pc += 2;
+                    cycles -= 1;
+                },
+                _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", ins, self.pc - 1),
+            }
+            // TODO: dec max_cycles
+        }
+    }
 }
 
-
+impl fmt::Debug for Cpu<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cpu")
+            .field("PC", &format!("0x{:04X}", self.pc))
+            .field("AC", &format!("0x{:02X}", self.ac))
+            // TODO 
+            .finish()
+    }
+}

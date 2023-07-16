@@ -7,7 +7,6 @@ pub mod mem;
 fn main() {
     println!("rust-6502-emu");
 
-
     let mut mem = Memory::create();
     mem.init();
 
@@ -20,4 +19,6 @@ fn main() {
     cpu.reset();
 
     println!("CPU values: {:#?}", cpu);
+
+    cpu.exec(3);
 }
