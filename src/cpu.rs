@@ -19,8 +19,8 @@ pub struct Cpu<'a> {
 impl fmt::Debug for Cpu<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Cpu")
-            .field("PC", &format!("0x{:X}", self.pc))
-            .field("AC", &format!("0x{:X}", self.ac))
+            .field("PC", &format!("0x{:04X}", self.pc))
+            .field("AC", &format!("0x{:02X}", self.ac))
             // TODO 
             .finish()
     }
@@ -44,9 +44,7 @@ impl Cpu<'_> {
 
     pub fn reset(&mut self) {
         // init reset vector at $FFFC to point to $E000 for initial PC
-    //     self.mem.write_u8(VECTOR_RES + 0x00, 0x12);
-    //     self.mem.write_u8(VECTOR_RES + 0x01, 0xE0);
-        self.mem.write_u16(VECTOR_RES, 0xE412);
+        self.mem.write_u16(VECTOR_RES, 0xE000);
     }
 }
 
