@@ -8,6 +8,6 @@ fn main() {
     println!("rust-6502-emu");
 
     let mem = Memory::create();
-    let cpu = Cpu::create();
+    let cpu = Cpu::create(&mem);
     println!("CPU values: {:?}", cpu);
 }
