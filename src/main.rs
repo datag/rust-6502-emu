@@ -18,8 +18,8 @@ fn main() {
 
     let mut cpu = Cpu::create(&mut mem);
     cpu.reset();
-    println!("{:#?}", cpu);
+    println!("After reset: {:#?}", cpu);
 
     cpu.exec(2);
-    println!("{:#?}", cpu);
+    println!("After instruction: {:#?}", cpu);
 }

@@ -5,6 +5,15 @@ use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xfffc;
 
+pub const SRF_C: u8 = 0x1;
+pub const SRF_Z: u8 = 0x2;
+pub const SRF_I: u8 = 0x4;
+pub const SRF_D: u8 = 0x8;
+pub const SRF_B: u8 = 0x10;
+// Bit 5 (0x20) is ignored
+pub const SRF_V: u8 = 0x40;
+pub const SRF_N: u8 = 0x80;
+
 pub struct Cpu<'a> {
     pub pc: u16,
     pub ac: u8,
@@ -24,7 +33,7 @@ impl Cpu<'_> {
         Cpu {
             // registers
             pc: 0,
-            ac: 0,
+            ac: 0xff,
             x: 0,
             y: 0,
             sr: 0,
@@ -41,6 +50,9 @@ impl Cpu<'_> {
     pub fn reset(&mut self) {
         // load address from reset vector $FFFC and store it into PC
         self.pc = self.mem.read_u16(VECTOR_RES);
+
+        // initialize SP; [0x0100 - 0x01FF] in memory
+        self.sp = 0xFF;
     }
 
     pub fn exec(&mut self, max_cycles: u16) {
@@ -66,7 +78,10 @@ impl Cpu<'_> {
                     let value: u8 = self.mem.read_u8(addr);
                     println!("value: ${:02X}", value);
 
-                    self.ac = self.ac + value;
+                    self.sr = (self.sr & !SRF_V) | if (self.ac as u16 + value as u16) > 0xff {SRF_V} else {0};
+                    self.ac = self.ac.wrapping_add(value);
+                    println!("AC is now: 0x{:02X}", self.ac);
+                    self.sr = (self.sr & !SRF_Z) | if self.ac == 0 {SRF_Z} else {0};
                     // TODO: SR flags
                 }
 
@@ -84,13 +99,20 @@ impl Cpu<'_> {
 
 impl fmt::Debug for Cpu<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let f_n = if self.sr & SRF_N > 0 {"N"} else {"-"};
+        let f_z = if self.sr & SRF_Z > 0 {"Z"} else {"-"};
+        let f_c = if self.sr & SRF_C > 0 {"C"} else {"-"};
+        let f_i = if self.sr & SRF_I > 0 {"I"} else {"-"};
+        let f_d = if self.sr & SRF_D > 0 {"D"} else {"-"};
+        let f_v = if self.sr & SRF_V > 0 {"V"} else {"-"};
+
         f.debug_struct("Cpu")
             .field("PC", &format!("0x{:04X}", self.pc))
             .field("AC", &format!("0x{:02X}", self.ac))
             .field("X", &format!("0x{:02X}", self.x))
             .field("Y", &format!("0x{:02X}", self.y))
             .field("SR", &format!("0x{:02X}", self.sr))
-            // TODO: SR flags
+            .field("SR flags", &format!("{}{}{}{}{}{}", f_n, f_z, f_c, f_i, f_d, f_v))
             .field("SP", &format!("0x{:02X}", self.sp))
             .field("[cycles]", &self.cycles)
             .finish()
