@@ -8,8 +8,9 @@ fn main() {
     println!("rust-6502-emu");
 
     let mut mem = Memory::create();
-    mem.init();
 
-    let cpu = Cpu::create(&mem);
+    let mut cpu = Cpu::create(&mut mem);
+    cpu.reset();
+
     println!("CPU values: {:#?}", cpu);
 }

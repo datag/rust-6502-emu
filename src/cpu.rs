@@ -2,7 +2,7 @@
 use std::fmt;
 use crate::mem::Memory;
 
-pub const VEC_RES: usize = 0xfffc;
+pub const VECTOR_RES: usize = 0xfffc;
 
 // #[derive(Debug)]
 pub struct Cpu<'a> {
@@ -13,7 +13,7 @@ pub struct Cpu<'a> {
     pub sr: u8,
     pub sp: u8,
 
-    pub mem: &'a Memory,
+    pub mem: &'a mut Memory,
 }
 
 impl fmt::Debug for Cpu<'_> {
@@ -27,8 +27,9 @@ impl fmt::Debug for Cpu<'_> {
 }
 
 impl Cpu<'_> {
-    pub fn create(memory: &Memory) -> Cpu {
+    pub fn create(memory: &mut Memory) -> Cpu {
         Cpu {
+            // registers
             pc: 0xfffc,
             ac: 0,
             x: 0,
@@ -36,8 +37,15 @@ impl Cpu<'_> {
             sr: 0,
             sp: 0,
 
+            // memory
             mem: memory,
         }
+    }
+
+    pub fn reset(&mut self) {
+        // init reset vector at $FFFC to point to $E000 for initial PC
+        self.mem.data[VECTOR_RES + 0x00] = 0x00;
+        self.mem.data[VECTOR_RES + 0x01] = 0xE0;
     }
 }
 
