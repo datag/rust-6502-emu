@@ -3,7 +3,7 @@ use crate::cpu::VECTOR_RES;
 
 const MEMORY_SIZE: usize = 0xffff;
 
-const RESET_VECTOR_ADDR: u16 = 0xe000;
+pub const ADDR_RESET_VECTOR: u16 = 0xe000;
 
 
 pub struct Memory {
@@ -19,11 +19,11 @@ impl Memory {
 
     pub fn init(&mut self) {
         // init reset vector at $FFFC to point to $E000 for initial PC
-        self.write_u16(VECTOR_RES, RESET_VECTOR_ADDR);
+        self.write_u16(VECTOR_RES, ADDR_RESET_VECTOR);
 
         // demo data
         for i in 0..16 {
-            self.write_u8(RESET_VECTOR_ADDR + (i as u16), i);
+            self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
     }
 
@@ -40,7 +40,15 @@ impl Memory {
     }
 
     pub fn write_u16(&mut self, addr: u16, value: u16) {
-        self.data[addr as usize] = (value & 0x00ff) as u8;          // LB
+        self.data[addr as usize] = (value & 0x00ff) as u8;                // LB
         self.data[(addr + 1) as usize] = ((value & 0xff00) >> 8) as u8;   // HB
+    }
+
+    pub fn dump(&self, addr: u16, bytes: u16) {
+        print!("mem @ 0x{:04X}:", addr);
+        for i in 0..bytes {
+            print!(" {:02X}", self.read_u8(addr + i));
+        }
+        println!()
     }
 }
