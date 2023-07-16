@@ -19,6 +19,7 @@ impl fmt::Debug for Cpu<'_> {
         f.debug_struct("Cpu")
             .field("PC", &format!("0x{:X}", self.pc))
             .field("AC", &format!("0x{:X}", self.ac))
+            // TODO 
             .finish()
     }
 }
