@@ -2,6 +2,8 @@
 use std::fmt;
 use crate::mem::Memory;
 
+pub const VEC_RES: usize = 0xfffc;
+
 // #[derive(Debug)]
 pub struct Cpu<'a> {
     pub pc: u16,

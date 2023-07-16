@@ -11,5 +11,5 @@ fn main() {
     mem.init();
 
     let cpu = Cpu::create(&mem);
-    println!("CPU values: {:?}", cpu);
+    println!("CPU values: {:#?}", cpu);
 }
