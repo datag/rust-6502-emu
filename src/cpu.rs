@@ -5,14 +5,14 @@ use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xfffc;
 
-pub const SRF_C: u8 = 0x1;
-pub const SRF_Z: u8 = 0x2;
-pub const SRF_I: u8 = 0x4;
-pub const SRF_D: u8 = 0x8;
-pub const SRF_B: u8 = 0x10;
-// Bit 5 (0x20) is ignored
-pub const SRF_V: u8 = 0x40;
-pub const SRF_N: u8 = 0x80;
+pub const SRF_C: u8 = 0x1;      // [0] Carry Flag
+pub const SRF_Z: u8 = 0x2;      // [1] Zero Flag
+pub const SRF_I: u8 = 0x4;      // [2] Interrupt Disable
+pub const SRF_D: u8 = 0x8;      // [3] Decimal Mode
+pub const SRF_B: u8 = 0x10;     // [4] Break Command
+// Bit 5 (0x20) is ignored      // [5] (ignored)
+pub const SRF_V: u8 = 0x40;     // [6] Overflow Flag
+pub const SRF_N: u8 = 0x80;     // [7] Negative Flag
 
 pub struct Cpu<'a> {
     pub pc: u16,
@@ -33,7 +33,7 @@ impl Cpu<'_> {
         Cpu {
             // registers
             pc: 0,
-            ac: 0xff,
+            ac: 0,
             x: 0,
             y: 0,
             sr: 0,
@@ -78,7 +78,7 @@ impl Cpu<'_> {
                     let value: u8 = self.mem.read_u8(addr);
                     println!("value: ${:02X}", value);
 
-                    self.sr = (self.sr & !SRF_V) | if (self.ac as u16 + value as u16) > 0xff {SRF_V} else {0};
+                    self.sr = (self.sr & !SRF_V) | if (self.ac as u16 + value as u16) > 0xff {SRF_V} else {0};      // FIXME!
                     self.ac = self.ac.wrapping_add(value);
                     println!("AC is now: 0x{:02X}", self.ac);
                     self.sr = (self.sr & !SRF_Z) | if self.ac == 0 {SRF_Z} else {0};

@@ -22,4 +22,7 @@ fn main() {
 
     cpu.exec(2);
     println!("After instruction: {:#?}", cpu);
+
+    cpu.exec(2);
+    println!("After instruction: {:#?}", cpu);
 }
