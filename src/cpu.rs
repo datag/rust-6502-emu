@@ -49,16 +49,12 @@ impl Cpu<'_> {
             self.pc += 1;
 
             match ins {
-                0x00 => {
+                0x00 | 0x01 | 0x02 => {
                     println!("got 0x00");
                     self.pc += 1;
                     cycles -= 2;
                 }
-                0x01 => {
-                    println!("got 0x01");
-                    self.pc += 2;
-                    cycles -= 1;
-                },
+
                 _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", ins, self.pc - 1),
             }
             // TODO: dec max_cycles

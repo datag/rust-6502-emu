@@ -1,11 +1,16 @@
 use crate::cpu::{Cpu, VECTOR_RES};
+use crate::instruction::Instruction;
 use crate::mem::{Memory, ADDR_RESET_VECTOR};
 
 pub mod cpu;
+pub mod instruction;
 pub mod mem;
 
 fn main() {
     println!("rust-6502-emu");
+
+    let ins = Instruction::from_opcode(0x69);
+    println!("foo: {:#?}", ins);
 
     let mut mem = Memory::create();
     mem.init();
