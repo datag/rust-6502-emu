@@ -1,5 +1,6 @@
 
 use std::fmt;
+use crate::instruction::*;
 use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xfffc;
@@ -13,6 +14,9 @@ pub struct Cpu<'a> {
     pub sp: u8,
 
     pub mem: &'a mut Memory,
+
+    // for debugging
+    pub cycles: u64,
 }
 
 impl Cpu<'_> {
@@ -28,6 +32,9 @@ impl Cpu<'_> {
 
             // memory
             mem,
+
+            // debug
+            cycles: 0,
         }
     }
 
@@ -37,26 +44,40 @@ impl Cpu<'_> {
     }
 
     pub fn exec(&mut self, max_cycles: u16) {
-        let mut cycles = max_cycles;
-        let mut ins: u8;
+        let mut cycles_to_execute = max_cycles;
+        let mut opcode: u8;
+        let mut addr: u16;
 
-        while cycles > 0 {
+        while cycles_to_execute > 0 {
+            addr = self.pc;
+
             // load instruction from mem at PC
-            ins = self.mem.read_u8(self.pc);
+            opcode = self.mem.read_u8(addr);
 
-            // increment PC
-            self.pc += 1;
+            let ins = Instruction::from_opcode(opcode);
+            println!("@{:04X} {:#?}", self.pc, ins);
 
-            match ins {
-                0x00 | 0x01 | 0x02 => {
-                    println!("got 0x00");
-                    self.pc += 1;
-                    cycles -= 2;
+            // advance current address
+            addr += 1;
+
+            match opcode {
+                ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
+                    println!("[[ADC]] ${:02X}", opcode);
+                    let value: u8 = self.mem.read_u8(addr);
+                    println!("value: ${:02X}", value);
+
+                    self.ac = self.ac + value;
+                    // TODO: SR flags
                 }
 
-                _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", ins, self.pc - 1),
+                _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
-            // TODO: dec max_cycles
+            
+            self.pc += ins.bytes as u16;
+            cycles_to_execute = cycles_to_execute.saturating_sub(ins.cycles as u16);
+
+            // increase global cycles counter
+            self.cycles = self.cycles.saturating_add(ins.cycles as u64);
         }
     }
 }
@@ -66,7 +87,12 @@ impl fmt::Debug for Cpu<'_> {
         f.debug_struct("Cpu")
             .field("PC", &format!("0x{:04X}", self.pc))
             .field("AC", &format!("0x{:02X}", self.ac))
-            // TODO 
+            .field("X", &format!("0x{:02X}", self.x))
+            .field("Y", &format!("0x{:02X}", self.y))
+            .field("SR", &format!("0x{:02X}", self.sr))
+            // TODO: SR flags
+            .field("SP", &format!("0x{:02X}", self.sp))
+            .field("[cycles]", &self.cycles)
             .finish()
     }
 }

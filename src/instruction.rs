@@ -31,7 +31,7 @@ impl Instruction<'_> {
             ADC_IDX => Instruction { opcode: ADC_IDX, mnemonic: "ADC", bytes: 2, cycles: 6 },
             ADC_IDY => Instruction { opcode: ADC_IDY, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ },
 
-            _ => panic!("Unimplemented or invalid instruction {:2X}", opcode),
+            _ => panic!("Unimplemented or invalid opcode {:2X}", opcode),
         }
     }
 }
@@ -39,7 +39,7 @@ impl Instruction<'_> {
 impl fmt::Debug for Instruction<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Instruction")
-            .field("Opcode", &format!("{:02X}", self.opcode))
+            .field("Opcode", &format!("0x{:02X}", self.opcode))
             .field("Mnemonic", &self.mnemonic)
             .field("Bytes", &self.bytes)
             .field("Cycles", &self.cycles)

@@ -1,5 +1,4 @@
 use crate::cpu::{Cpu, VECTOR_RES};
-use crate::instruction::Instruction;
 use crate::mem::{Memory, ADDR_RESET_VECTOR};
 
 pub mod cpu;
@@ -9,21 +8,18 @@ pub mod mem;
 fn main() {
     println!("rust-6502-emu");
 
-    let ins = Instruction::from_opcode(0x69);
-    println!("foo: {:#?}", ins);
-
     let mut mem = Memory::create();
     mem.init();
 
-    //println!("Mem @ 0xfffc: 0x{:02X}  0xfffd: 0x{:02X}", mem.read_u8(VECTOR_RES), mem.read_u8(VECTOR_RES + 1));
-    //println!("Mem @ 0x{:04X}: 0x{:04X}", VECTOR_RES, mem.read_u16(VECTOR_RES));
+    print!("Reset vector: ");
     mem.dump(VECTOR_RES, 2);
+    print!("Data at reset vector address: ");
     mem.dump(ADDR_RESET_VECTOR, 16);
 
     let mut cpu = Cpu::create(&mut mem);
     cpu.reset();
+    println!("{:#?}", cpu);
 
-    println!("CPU values: {:#?}", cpu);
-
-    cpu.exec(3);
+    cpu.exec(2);
+    println!("{:#?}", cpu);
 }

@@ -25,6 +25,9 @@ impl Memory {
         for i in 0..16 {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
+
+        self.write_u8(ADDR_RESET_VECTOR + 0, 0x69);
+        self.write_u8(ADDR_RESET_VECTOR + 1, 0x10);
     }
 
     pub fn read_u8(&self, addr: u16) -> u8 {
