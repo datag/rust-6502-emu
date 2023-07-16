@@ -1,9 +1,8 @@
 
-// https://www.masswerk.at/6502/6502_instruction_set.html
-
+use std::fmt;
 use crate::mem::Memory;
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct Cpu<'a> {
     pub pc: u16,
     pub ac: u8,
@@ -13,6 +12,15 @@ pub struct Cpu<'a> {
     pub sp: u8,
 
     pub mem: &'a Memory,
+}
+
+impl fmt::Debug for Cpu<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Cpu")
+            .field("PC", &format!("0x{:X}", self.pc))
+            .field("AC", &format!("0x{:X}", self.ac))
+            .finish()
+    }
 }
 
 impl Cpu<'_> {
@@ -29,3 +37,5 @@ impl Cpu<'_> {
         }
     }
 }
+
+
