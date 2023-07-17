@@ -10,14 +10,15 @@ pub const ADC_ABY: u8 = 0x79;
 pub const ADC_IDX: u8 = 0x61;
 pub const ADC_IDY: u8 = 0x71;
 
-// BCC - Branch on Carry Clear
-pub const BCC_REL: u8 = 0x90;
-
-// BCS - Branch on Carry Set
-//pub const BCS_REL: u8 = 0xB0;
-
-// BEQ - Branch on Result Zero
-//pub const BEQ_REL: u8 = 0xF0;
+// Branches
+pub const BCC_REL: u8 = 0x90;   // BCC - Branch on Carry Clear
+pub const BCS_REL: u8 = 0xB0;   // BCS - Branch on Carry Set
+pub const BEQ_REL: u8 = 0xF0;   // BEQ - Branch on Result Zero
+pub const BNE_REL: u8 = 0xD0;   // BNE - Branch on Result not Zero
+pub const BPL_REL: u8 = 0x10;   // BPL - Branch on Result Plus
+pub const BMI_REL: u8 = 0x30;   // BMI - Branch on Result Minus
+pub const BVC_REL: u8 = 0x50;   // BVC - Branch on Overflow Clear
+pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
 
 // BIT - Test Bits in Memory with Accumulator
 pub const BIT_ZPG: u8 = 0x24;
@@ -49,10 +50,13 @@ impl Instruction<'_> {
             ADC_IDY => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
             BCC_REL => Ok(Instruction { opcode, mnemonic: "BCC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-
-            //BCS_REL => Ok(Instruction { opcode, mnemonic: "BCS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-
-            //BEQ_REL => Ok(Instruction { opcode, mnemonic: "BEQ", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BCS_REL => Ok(Instruction { opcode, mnemonic: "BCS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BEQ_REL => Ok(Instruction { opcode, mnemonic: "BEQ", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BNE_REL => Ok(Instruction { opcode, mnemonic: "BNE", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BPL_REL => Ok(Instruction { opcode, mnemonic: "BPL", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BMI_REL => Ok(Instruction { opcode, mnemonic: "BMI", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVC_REL => Ok(Instruction { opcode, mnemonic: "BVC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVS_REL => Ok(Instruction { opcode, mnemonic: "BVS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
 
             BIT_ZPG => Ok(Instruction { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Instruction { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),

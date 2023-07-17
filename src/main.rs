@@ -32,9 +32,9 @@ fn main() {
     // cpu.exec(2);
     // println!("After ADC #1 again: {:#?}", cpu);
 
-    cpu.sr.set(StatusFlags::C, false);
+    cpu.sr.set(StatusFlags::V, false);
     cpu.exec(1);
-    println!("After BCC: {:#?}", cpu);
+    println!("After B**: {:?}", cpu);
 
     cpu.exec(10);
 }

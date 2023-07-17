@@ -13,9 +13,10 @@ bitflags! {
         const I = 0b00000100;          // [2] Interrupt Disable
         const D = 0b00001000;          // [3] Decimal Mode
         const B = 0b00010000;          // [4] Break Command
-        const RESERVED = 0b00100000;   // [5] (reserved, always 1)
         const V = 0b01000000;          // [6] Overflow Flag
         const N = 0b10000000;          // [7] Negative Flag
+
+        const RESERVED = 0b00100000;   // [5] (reserved, always 1)
 
         const ALL = Self::C.bits() | Self::Z.bits() | Self::I.bits() | Self::D.bits() | Self::B.bits() | Self::V.bits() | Self::N.bits();
     }
@@ -136,10 +137,21 @@ impl Cpu<'_> {
                 self.sr.set(StatusFlags::Z, (value & self.ac) == 0);                  // result of operand and AC
             },
 
-            BCC_REL => {
+            BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
                 let rel: i8 = self.mem.read_u8(cur_addr) as i8;
-                println!("rel: ${:02X} {}", rel, rel);
-                if !self.sr.contains(StatusFlags::C) {
+                let jmp = match opcode {
+                    BCC_REL => !self.sr.contains(StatusFlags::C),
+                    BCS_REL => self.sr.contains(StatusFlags::C),
+                    BEQ_REL => self.sr.contains(StatusFlags::Z),
+                    BNE_REL => !self.sr.contains(StatusFlags::Z),
+                    BPL_REL => !self.sr.contains(StatusFlags::N),
+                    BMI_REL => self.sr.contains(StatusFlags::N),
+                    BVC_REL => !self.sr.contains(StatusFlags::V),
+                    BVS_REL => self.sr.contains(StatusFlags::V),
+                    _ => panic!("Undefined branch opcode {:02X}", opcode),
+                };
+                println!("rel: ${:02X} {}  jmp: {}", rel, rel, jmp);
+                if jmp {
                     self.pc = self.pc.wrapping_add(rel as u16);     // add/sub relative address
                     cycles_additional += 1;   // TODO: +2 if on different page
                 }
