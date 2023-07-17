@@ -1,9 +1,9 @@
 
 use crate::cpu::VECTOR_RES;
 
-const MEMORY_SIZE: usize = 0xffff;
+const MEMORY_SIZE: usize = 0xFFFF;
 
-pub const ADDR_RESET_VECTOR: u16 = 0xe000;
+pub const ADDR_RESET_VECTOR: u16 = 0xE000;
 
 
 pub struct Memory {
@@ -32,7 +32,11 @@ impl Memory {
 
         // ADC #FF
         self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
-        self.write_u8(ADDR_RESET_VECTOR + 3, 0xff);
+        self.write_u8(ADDR_RESET_VECTOR + 3, 0xFF);
+
+        // JMP
+        self.write_u8(ADDR_RESET_VECTOR + 4, 0x4C);
+        self.write_u16(ADDR_RESET_VECTOR + 5, ADDR_RESET_VECTOR);
     }
 
     pub fn read_u8(&self, addr: u16) -> u8 {
@@ -48,8 +52,8 @@ impl Memory {
     }
 
     pub fn write_u16(&mut self, addr: u16, value: u16) {
-        self.data[addr as usize] = (value & 0x00ff) as u8;                // LB
-        self.data[(addr + 1) as usize] = ((value & 0xff00) >> 8) as u8;   // HB
+        self.data[addr as usize] = (value & 0x00FF) as u8;                // LB
+        self.data[(addr + 1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
     }
 
     pub fn dump(&self, addr: u16, bytes: u16) {

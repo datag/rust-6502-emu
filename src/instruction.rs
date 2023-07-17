@@ -10,6 +10,11 @@ pub const ADC_ABY: u8 = 0x79;
 pub const ADC_IDX: u8 = 0x61;
 pub const ADC_IDY: u8 = 0x71;
 
+// JMP - Jump to New Location
+pub const JMP_ABS: u8 = 0x4C;
+pub const JMP_IND: u8 = 0x6C;
+
+
 pub struct Instruction<'a> {
     pub opcode: u8,
     pub mnemonic: &'a str,
@@ -30,6 +35,9 @@ impl Instruction<'_> {
             ADC_ABY => Instruction { opcode: ADC_ABY, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ },
             ADC_IDX => Instruction { opcode: ADC_IDX, mnemonic: "ADC", bytes: 2, cycles: 6 },
             ADC_IDY => Instruction { opcode: ADC_IDY, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ },
+
+            JMP_ABS => Instruction { opcode: JMP_ABS, mnemonic: "JMP", bytes: 3, cycles: 3 },
+            JMP_IND => Instruction { opcode: JMP_IND, mnemonic: "JMP", bytes: 3, cycles: 5 },
 
             _ => panic!("Unimplemented or invalid opcode {:2X}", opcode),
         }

@@ -46,7 +46,7 @@ impl Cpu<'_> {
 
             sr: StatusFlags::RESERVED,
 
-            sp: 0xff,   // [0x0100 - 0x01FF] in memory
+            sp: 0xFF,   // [0x0100 - 0x01FF] in memory
 
             // memory
             mem,
@@ -64,27 +64,29 @@ impl Cpu<'_> {
     pub fn exec(&mut self, max_cycles: u16) {
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
-        let mut addr: u16;
+        let mut cur_addr: u16;
 
         while cycles_to_execute > 0 {
-            addr = self.pc;
+            cur_addr = self.pc;
 
             // load instruction from mem at PC
-            opcode = self.mem.read_u8(addr);
+            opcode = self.mem.read_u8(cur_addr);
 
-            let ins = Instruction::from_opcode(opcode);
+            let ins = Instruction::from_opcode(opcode);  // FIXME: catch error
             println!("@{:04X} {:#?}", self.pc, ins);
 
+            // advance PC
+            self.pc += ins.bytes as u16;
+
             // advance current address
-            addr += 1;
+            cur_addr += 1;
 
             match opcode {
                 ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
-                    println!("[[ADC]] ${:02X}", opcode);
-                    let value: u8 = self.mem.read_u8(addr);
+                    let value: u8 = self.mem.read_u8(cur_addr);
                     println!("value: ${:02X}", value);
 
-                    self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xff);        // FIXME
+                    self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xFF);        // FIXME
                     self.ac = self.ac.wrapping_add(value);
                     println!("AC is now: 0x{:02X}", self.ac);
                     
@@ -92,10 +94,15 @@ impl Cpu<'_> {
                     // TODO: SR flags
                 }
 
-                _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
+                JMP_ABS | JMP_IND => {
+                    let addr: u16 = self.mem.read_u16(cur_addr);
+                    println!("addr: ${:04X}", addr);
+                    self.pc = addr;
+                }
+
+                _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
             }
             
-            self.pc += ins.bytes as u16;
             cycles_to_execute = cycles_to_execute.saturating_sub(ins.cycles as u16);
 
             // increase global cycles counter

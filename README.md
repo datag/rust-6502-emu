@@ -1,5 +1,9 @@
 # rust-6502-emu
 
+## Status
+
+* Opcodes: https://docs.google.com/spreadsheets/d/1L-864UBW4wkh5y9SUwTcCbbFewtKfADZxqDlOhk8pA4
+
 ## Sources
 
 * https://en.wikipedia.org/wiki/MOS_Technology_6502
