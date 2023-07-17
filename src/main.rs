@@ -20,15 +20,19 @@ fn main() {
     cpu.reset();
     println!("After reset: {:#?}", cpu);
 
-    cpu.exec(2);
-    println!("After #1 ADC: {:#?}", cpu);
+    // cpu.exec(2);
+    // println!("After #1 ADC: {:#?}", cpu);
 
-    cpu.exec(2);
-    println!("After #2 ADC: {:#?}", cpu);
+    // cpu.exec(2);
+    // println!("After #2 ADC: {:#?}", cpu);
 
-    cpu.exec(3);
-    println!("After JMP: {:#?}", cpu);
+    // cpu.exec(3);
+    // println!("After JMP: {:#?}", cpu);
 
-    cpu.exec(2);
-    println!("After ADC #1 again: {:#?}", cpu);
+    // cpu.exec(2);
+    // println!("After ADC #1 again: {:#?}", cpu);
+
+    cpu.ac = 1;
+    cpu.exec(1);
+    println!("BIT: {:#?}", cpu);
 }

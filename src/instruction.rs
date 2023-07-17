@@ -14,6 +14,10 @@ pub const ADC_IDY: u8 = 0x71;
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
 
+// BIT - Test Bits in Memory with Accumulator
+pub const BIT_ZPG: u8 = 0x24;
+pub const BIT_ABS: u8 = 0x2C;
+
 
 pub struct Instruction<'a> {
     pub opcode: u8,
@@ -35,8 +39,13 @@ impl Instruction<'_> {
             ADC_IDX => Ok(Instruction { opcode: ADC_IDX, mnemonic: "ADC", bytes: 2, cycles: 6 }),
             ADC_IDY => Ok(Instruction { opcode: ADC_IDY, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
+            // JMP
             JMP_ABS => Ok(Instruction { opcode: JMP_ABS, mnemonic: "JMP", bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Instruction { opcode: JMP_IND, mnemonic: "JMP", bytes: 3, cycles: 5 }),
+
+            // BIT
+            BIT_ZPG => Ok(Instruction { opcode: BIT_ZPG, mnemonic: "BIT", bytes: 2, cycles: 3 }),
+            BIT_ABS => Ok(Instruction { opcode: BIT_ABS, mnemonic: "BIT", bytes: 3, cycles: 4 }),
 
             _ => Err(()),
         }

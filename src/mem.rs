@@ -26,19 +26,28 @@ impl Memory {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
 
-        // ADC #1
-        self.write_u8(ADDR_RESET_VECTOR + 0, 0x69);
-        self.write_u8(ADDR_RESET_VECTOR + 1, 0x01);
+        // // ADC #1
+        // self.write_u8(ADDR_RESET_VECTOR + 0, 0x69);
+        // self.write_u8(ADDR_RESET_VECTOR + 1, 0x01);
 
-        // ADC #FF
-        self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
-        self.write_u8(ADDR_RESET_VECTOR + 3, 0xFF);
+        // // ADC #FF
+        // self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
+        // self.write_u8(ADDR_RESET_VECTOR + 3, 0xFF);
 
-        // JMP
-        self.write_u8(ADDR_RESET_VECTOR + 4, 0x6C);
-        self.write_u16(ADDR_RESET_VECTOR + 5, 0xf0);
+        // // JMP (ABS)
+        // self.write_u8(ADDR_RESET_VECTOR + 4, 0x4C);
+        // self.write_u16(ADDR_RESET_VECTOR + 5, ADDR_RESET_VECTOR);
 
-        self.write_u16(0xf0, ADDR_RESET_VECTOR);
+        // // JMP (IND)
+        // self.write_u16(0x00F0, ADDR_RESET_VECTOR);
+        // self.write_u8(ADDR_RESET_VECTOR + 4, 0x6C);
+        // self.write_u16(ADDR_RESET_VECTOR + 5, 0x00F0);
+
+        // BIT (ABS)
+        self.write_u16(0x00F0, 0x81);
+        self.write_u8(ADDR_RESET_VECTOR + 0, 0x2C);
+        self.write_u16(ADDR_RESET_VECTOR + 1, 0x00F0);
+
     }
 
     pub fn read_u8(&self, addr: u16) -> u8 {

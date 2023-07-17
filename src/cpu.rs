@@ -96,7 +96,8 @@ impl Cpu<'_> {
     }
 
     fn handle_opcode(&mut self, ins: &Instruction<'_>, cur_addr: u16) {
-        match ins.opcode {
+        let opcode = ins.opcode;
+        match opcode {
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
                 let value = self.mem.read_u8(cur_addr);
                 println!("value: ${:02X}", value);
@@ -111,14 +112,28 @@ impl Cpu<'_> {
 
             JMP_ABS | JMP_IND => {
                 let mut addr = self.mem.read_u16(cur_addr);
-                if ins.opcode == JMP_IND {
+                if opcode == JMP_IND {
                     addr = self.mem.read_u16(addr); // indirection: real target is at read addr
                 }
                 println!("addr: ${:04X}", addr);
                 self.pc = addr;
             }
 
-            _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", ins.opcode, cur_addr - 1),
+            BIT_ZPG | BIT_ABS => {
+                let addr: u16;
+                if opcode == BIT_ABS {
+                    addr = self.mem.read_u16(cur_addr);
+                } else {
+                    addr = self.mem.read_u8(cur_addr) as u16;
+                }
+                let value = self.mem.read_u8(addr);
+                println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
+                self.sr.set(StatusFlags::N, (value & StatusFlags::N.bits()) != 0);    // transfer bit 7 of operand to N
+                self.sr.set(StatusFlags::V, (value & StatusFlags::V.bits()) != 0);    // transfer bit 6 of operand to V
+                self.sr.set(StatusFlags::Z, (value & self.ac) == 0);                  // result of operand and AC
+            },
+
+            _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
     }
 }
