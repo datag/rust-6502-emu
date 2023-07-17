@@ -35,8 +35,10 @@ impl Memory {
         self.write_u8(ADDR_RESET_VECTOR + 3, 0xFF);
 
         // JMP
-        self.write_u8(ADDR_RESET_VECTOR + 4, 0x4C);
-        self.write_u16(ADDR_RESET_VECTOR + 5, ADDR_RESET_VECTOR);
+        self.write_u8(ADDR_RESET_VECTOR + 4, 0x6C);
+        self.write_u16(ADDR_RESET_VECTOR + 5, 0xf0);
+
+        self.write_u16(0xf0, ADDR_RESET_VECTOR);
     }
 
     pub fn read_u8(&self, addr: u16) -> u8 {

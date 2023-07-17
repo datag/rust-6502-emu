@@ -98,7 +98,7 @@ impl Cpu<'_> {
     fn handle_opcode(&mut self, ins: &Instruction<'_>, cur_addr: u16) {
         match ins.opcode {
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
-                let value: u8 = self.mem.read_u8(cur_addr);
+                let value = self.mem.read_u8(cur_addr);
                 println!("value: ${:02X}", value);
 
                 self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xFF);        // FIXME
@@ -110,7 +110,10 @@ impl Cpu<'_> {
             }
 
             JMP_ABS | JMP_IND => {
-                let addr: u16 = self.mem.read_u16(cur_addr);
+                let mut addr = self.mem.read_u16(cur_addr);
+                if ins.opcode == JMP_IND {
+                    addr = self.mem.read_u16(addr); // indirection: real target is at read addr
+                }
                 println!("addr: ${:04X}", addr);
                 self.pc = addr;
             }
