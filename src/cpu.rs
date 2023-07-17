@@ -1,25 +1,32 @@
 
 use std::fmt;
+use bitflags::bitflags;
 use crate::instruction::*;
 use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xfffc;
 
-pub const SRF_C: u8 = 0x1;      // [0] Carry Flag
-pub const SRF_Z: u8 = 0x2;      // [1] Zero Flag
-pub const SRF_I: u8 = 0x4;      // [2] Interrupt Disable
-pub const SRF_D: u8 = 0x8;      // [3] Decimal Mode
-pub const SRF_B: u8 = 0x10;     // [4] Break Command
-// Bit 5 (0x20) is ignored      // [5] (ignored)
-pub const SRF_V: u8 = 0x40;     // [6] Overflow Flag
-pub const SRF_N: u8 = 0x80;     // [7] Negative Flag
+bitflags! {
+    pub struct StatusFlags: u8 {
+        const C = 0b00000001;          // [0] Carry Flag
+        const Z = 0b00000010;          // [1] Zero Flag
+        const I = 0b00000100;          // [2] Interrupt Disable
+        const D = 0b00001000;          // [3] Decimal Mode
+        const B = 0b00010000;          // [4] Break Command
+        const RESERVED = 0b00100000;   // [5] (reserved, always 1)
+        const V = 0b01000000;          // [6] Overflow Flag
+        const N = 0b10000000;          // [7] Negative Flag
+
+        const ALL = Self::C.bits() | Self::Z.bits() | Self::I.bits() | Self::D.bits() | Self::B.bits() | Self::V.bits() | Self::N.bits();
+    }
+}
 
 pub struct Cpu<'a> {
     pub pc: u16,
     pub ac: u8,
     pub x: u8,
     pub y: u8,
-    pub sr: u8,
+    pub sr: StatusFlags,
     pub sp: u8,
 
     pub mem: &'a mut Memory,
@@ -36,8 +43,10 @@ impl Cpu<'_> {
             ac: 0,
             x: 0,
             y: 0,
-            sr: 0,
-            sp: 0,
+
+            sr: StatusFlags::RESERVED,
+
+            sp: 0xff,   // [0x0100 - 0x01FF] in memory
 
             // memory
             mem,
@@ -50,9 +59,6 @@ impl Cpu<'_> {
     pub fn reset(&mut self) {
         // load address from reset vector $FFFC and store it into PC
         self.pc = self.mem.read_u16(VECTOR_RES);
-
-        // initialize SP; [0x0100 - 0x01FF] in memory
-        self.sp = 0xFF;
     }
 
     pub fn exec(&mut self, max_cycles: u16) {
@@ -78,10 +84,11 @@ impl Cpu<'_> {
                     let value: u8 = self.mem.read_u8(addr);
                     println!("value: ${:02X}", value);
 
-                    self.sr = (self.sr & !SRF_V) | if (self.ac as u16 + value as u16) > 0xff {SRF_V} else {0};      // FIXME!
+                    self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xff);        // FIXME
                     self.ac = self.ac.wrapping_add(value);
                     println!("AC is now: 0x{:02X}", self.ac);
-                    self.sr = (self.sr & !SRF_Z) | if self.ac == 0 {SRF_Z} else {0};
+                    
+                    self.sr.set(StatusFlags::Z, self.ac == 0);
                     // TODO: SR flags
                 }
 
@@ -99,20 +106,19 @@ impl Cpu<'_> {
 
 impl fmt::Debug for Cpu<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let f_n = if self.sr & SRF_N > 0 {"N"} else {"-"};
-        let f_z = if self.sr & SRF_Z > 0 {"Z"} else {"-"};
-        let f_c = if self.sr & SRF_C > 0 {"C"} else {"-"};
-        let f_i = if self.sr & SRF_I > 0 {"I"} else {"-"};
-        let f_d = if self.sr & SRF_D > 0 {"D"} else {"-"};
-        let f_v = if self.sr & SRF_V > 0 {"V"} else {"-"};
+        let f_n = if self.sr.contains(StatusFlags::N) {"N"} else {"-"};
+        let f_z = if self.sr.contains(StatusFlags::Z) {"Z"} else {"-"};
+        let f_c = if self.sr.contains(StatusFlags::C) {"C"} else {"-"};
+        let f_i = if self.sr.contains(StatusFlags::I) {"I"} else {"-"};
+        let f_d = if self.sr.contains(StatusFlags::D) {"D"} else {"-"};
+        let f_v = if self.sr.contains(StatusFlags::V) {"V"} else {"-"};
 
         f.debug_struct("Cpu")
             .field("PC", &format!("0x{:04X}", self.pc))
             .field("AC", &format!("0x{:02X}", self.ac))
             .field("X", &format!("0x{:02X}", self.x))
             .field("Y", &format!("0x{:02X}", self.y))
-            .field("SR", &format!("0x{:02X}", self.sr))
-            .field("SR flags", &format!("{}{}{}{}{}{}", f_n, f_z, f_c, f_i, f_d, f_v))
+            .field("SR", &format!("0x{:02X}  [{}{}{}{}{}{}]", self.sr, f_n, f_z, f_c, f_i, f_d, f_v))
             .field("SP", &format!("0x{:02X}", self.sp))
             .field("[cycles]", &self.cycles)
             .finish()
