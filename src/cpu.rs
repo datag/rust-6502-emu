@@ -82,21 +82,24 @@ impl Cpu<'_> {
                     self.pc += ins.bytes as u16;
 
                     // handle the opcode
-                    self.handle_opcode(&ins, cur_addr);
+                    let cycles_additional = self.handle_opcode(&ins, cur_addr);
+                    let cycles_consumed = ins.cycles + cycles_additional;
         
                     // decrease remaining cycle counter 
-                    cycles_to_execute = cycles_to_execute.saturating_sub(ins.cycles as u16);
+                    cycles_to_execute = cycles_to_execute.saturating_sub(cycles_consumed as u16);
 
                     // [debug] increase global cycles counter
-                    self.cycles = self.cycles.saturating_add(ins.cycles as u64);
+                    self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
                 },
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
         }
     }
 
-    fn handle_opcode(&mut self, ins: &Instruction<'_>, cur_addr: u16) {
+    fn handle_opcode(&mut self, ins: &Instruction<'_>, cur_addr: u16) -> u8 {
         let opcode = ins.opcode;
+        let mut cycles_additional = 0;
+
         match opcode {
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
                 let value = self.mem.read_u8(cur_addr);
@@ -133,8 +136,19 @@ impl Cpu<'_> {
                 self.sr.set(StatusFlags::Z, (value & self.ac) == 0);                  // result of operand and AC
             },
 
+            BCC_REL => {
+                let rel: i8 = self.mem.read_u8(cur_addr) as i8;
+                println!("rel: ${:02X} {}", rel, rel);
+                if !self.sr.contains(StatusFlags::C) {
+                    self.pc = self.pc.wrapping_add(rel as u16);     // add/sub relative address
+                    cycles_additional += 1;   // TODO: +2 if on different page
+                }
+            }
+
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
+
+        return cycles_additional;
     }
 }
 

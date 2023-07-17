@@ -1,4 +1,4 @@
-use crate::cpu::{Cpu, VECTOR_RES};
+use crate::cpu::{Cpu, VECTOR_RES, StatusFlags};
 use crate::mem::{Memory, ADDR_RESET_VECTOR};
 
 pub mod cpu;
@@ -18,7 +18,7 @@ fn main() {
 
     let mut cpu = Cpu::create(&mut mem);
     cpu.reset();
-    println!("After reset: {:#?}", cpu);
+    //println!("After reset: {:#?}", cpu);
 
     // cpu.exec(2);
     // println!("After #1 ADC: {:#?}", cpu);
@@ -32,7 +32,9 @@ fn main() {
     // cpu.exec(2);
     // println!("After ADC #1 again: {:#?}", cpu);
 
-    cpu.ac = 1;
+    cpu.sr.set(StatusFlags::C, false);
     cpu.exec(1);
-    println!("BIT: {:#?}", cpu);
+    println!("After BCC: {:#?}", cpu);
+
+    cpu.exec(10);
 }

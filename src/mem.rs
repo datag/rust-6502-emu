@@ -43,10 +43,22 @@ impl Memory {
         // self.write_u8(ADDR_RESET_VECTOR + 4, 0x6C);
         // self.write_u16(ADDR_RESET_VECTOR + 5, 0x00F0);
 
-        // BIT (ABS)
-        self.write_u16(0x00F0, 0x81);
-        self.write_u8(ADDR_RESET_VECTOR + 0, 0x2C);
-        self.write_u16(ADDR_RESET_VECTOR + 1, 0x00F0);
+        // // BIT (ABS)
+        // self.write_u16(0x00F0, 0x81);
+        // self.write_u8(ADDR_RESET_VECTOR + 0, 0x2C);
+        // self.write_u16(ADDR_RESET_VECTOR + 1, 0x00F0);
+
+        // BCC
+        self.write_u8(ADDR_RESET_VECTOR + 0, 0x90);
+        self.write_u8(ADDR_RESET_VECTOR + 1, 2);        // (-2 as i8) as u8
+
+        // some instruction
+        self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
+        self.write_u8(ADDR_RESET_VECTOR + 3, 0x01);
+
+        // some other instruction
+        self.write_u8(ADDR_RESET_VECTOR + 4, 0x69);
+        self.write_u8(ADDR_RESET_VECTOR + 5, 0x02);
 
     }
 
