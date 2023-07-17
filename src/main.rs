@@ -21,11 +21,14 @@ fn main() {
     println!("After reset: {:#?}", cpu);
 
     cpu.exec(2);
-    println!("After instruction: {:#?}", cpu);
+    println!("After #1 ADC: {:#?}", cpu);
 
     cpu.exec(2);
-    println!("After instruction: {:#?}", cpu);
+    println!("After #2 ADC: {:#?}", cpu);
 
     cpu.exec(3);
-    println!("After instruction: {:#?}", cpu);
+    println!("After JMP: {:#?}", cpu);
+
+    cpu.exec(2);
+    println!("After ADC #1 again: {:#?}", cpu);
 }

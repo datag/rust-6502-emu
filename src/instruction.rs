@@ -23,23 +23,22 @@ pub struct Instruction<'a> {
 }
 
 impl Instruction<'_> {
-    pub fn from_opcode(opcode: u8) -> Instruction<'static> {
-
+    pub fn from_opcode(opcode: u8) -> Result<Instruction<'static>, ()> {
         match opcode {
             // ADC
-            ADC_IMM => Instruction { opcode: ADC_IMM, mnemonic: "ADC", bytes: 2, cycles: 2 },
-            ADC_ZPG => Instruction { opcode: ADC_ZPG, mnemonic: "ADC", bytes: 2, cycles: 3 },
-            ADC_ZPX => Instruction { opcode: ADC_ZPX, mnemonic: "ADC", bytes: 2, cycles: 4 },
-            ADC_ABS => Instruction { opcode: ADC_ABS, mnemonic: "ADC", bytes: 3, cycles: 4 },
-            ADC_ABX => Instruction { opcode: ADC_ABX, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ },
-            ADC_ABY => Instruction { opcode: ADC_ABY, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ },
-            ADC_IDX => Instruction { opcode: ADC_IDX, mnemonic: "ADC", bytes: 2, cycles: 6 },
-            ADC_IDY => Instruction { opcode: ADC_IDY, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ },
+            ADC_IMM => Ok(Instruction { opcode: ADC_IMM, mnemonic: "ADC", bytes: 2, cycles: 2 }),
+            ADC_ZPG => Ok(Instruction { opcode: ADC_ZPG, mnemonic: "ADC", bytes: 2, cycles: 3 }),
+            ADC_ZPX => Ok(Instruction { opcode: ADC_ZPX, mnemonic: "ADC", bytes: 2, cycles: 4 }),
+            ADC_ABS => Ok(Instruction { opcode: ADC_ABS, mnemonic: "ADC", bytes: 3, cycles: 4 }),
+            ADC_ABX => Ok(Instruction { opcode: ADC_ABX, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_ABY => Ok(Instruction { opcode: ADC_ABY, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_IDX => Ok(Instruction { opcode: ADC_IDX, mnemonic: "ADC", bytes: 2, cycles: 6 }),
+            ADC_IDY => Ok(Instruction { opcode: ADC_IDY, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            JMP_ABS => Instruction { opcode: JMP_ABS, mnemonic: "JMP", bytes: 3, cycles: 3 },
-            JMP_IND => Instruction { opcode: JMP_IND, mnemonic: "JMP", bytes: 3, cycles: 5 },
+            JMP_ABS => Ok(Instruction { opcode: JMP_ABS, mnemonic: "JMP", bytes: 3, cycles: 3 }),
+            JMP_IND => Ok(Instruction { opcode: JMP_IND, mnemonic: "JMP", bytes: 3, cycles: 5 }),
 
-            _ => panic!("Unimplemented or invalid opcode {:2X}", opcode),
+            _ => Err(()),
         }
     }
 }
