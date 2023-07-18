@@ -1,9 +1,9 @@
-use crate::cpu::{Cpu, VECTOR_RES, StatusFlags};
-use crate::mem::{Memory, ADDR_RESET_VECTOR};
-
 pub mod cpu;
 pub mod instruction;
 pub mod mem;
+
+use crate::cpu::{Cpu, VECTOR_RES, StatusFlags};
+use crate::mem::{Memory, ADDR_RESET_VECTOR};
 
 fn main() {
     println!("rust-6502-emu");
