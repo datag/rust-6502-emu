@@ -38,31 +38,31 @@ pub struct Instruction<'a> {
 }
 
 impl Instruction<'_> {
-    pub fn from_opcode(opcode: u8) -> Result<Instruction<'static>, ()> {
+    pub fn from_opcode(opcode: u8) -> Result<Self, ()> {
         match opcode {
-            ADC_IMM => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 2 }),
-            ADC_ZPG => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 3 }),
-            ADC_ZPX => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 4 }),
-            ADC_ABS => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 }),
-            ADC_ABX => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ADC_ABY => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ADC_IDX => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 6 }),
-            ADC_IDY => Ok(Instruction { opcode, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+            ADC_IMM => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 2 }),
+            ADC_ZPG => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 3 }),
+            ADC_ZPX => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 4 }),
+            ADC_ABS => Ok(Self { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 }),
+            ADC_ABX => Ok(Self { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_ABY => Ok(Self { opcode, mnemonic: "ADC", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_IDX => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 6 }),
+            ADC_IDY => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            BCC_REL => Ok(Instruction { opcode, mnemonic: "BCC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BCS_REL => Ok(Instruction { opcode, mnemonic: "BCS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BEQ_REL => Ok(Instruction { opcode, mnemonic: "BEQ", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BNE_REL => Ok(Instruction { opcode, mnemonic: "BNE", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BPL_REL => Ok(Instruction { opcode, mnemonic: "BPL", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BMI_REL => Ok(Instruction { opcode, mnemonic: "BMI", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BVC_REL => Ok(Instruction { opcode, mnemonic: "BVC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BVS_REL => Ok(Instruction { opcode, mnemonic: "BVS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BCC_REL => Ok(Self { opcode, mnemonic: "BCC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BCS_REL => Ok(Self { opcode, mnemonic: "BCS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BEQ_REL => Ok(Self { opcode, mnemonic: "BEQ", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BNE_REL => Ok(Self { opcode, mnemonic: "BNE", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BPL_REL => Ok(Self { opcode, mnemonic: "BPL", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BMI_REL => Ok(Self { opcode, mnemonic: "BMI", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVC_REL => Ok(Self { opcode, mnemonic: "BVC", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVS_REL => Ok(Self { opcode, mnemonic: "BVS", bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
 
-            BIT_ZPG => Ok(Instruction { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
-            BIT_ABS => Ok(Instruction { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
+            BIT_ZPG => Ok(Self { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
+            BIT_ABS => Ok(Self { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
 
-            JMP_ABS => Ok(Instruction { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
-            JMP_IND => Ok(Instruction { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),
+            JMP_ABS => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
+            JMP_IND => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),
 
             _ => Err(()),
         }

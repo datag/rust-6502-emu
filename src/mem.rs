@@ -11,8 +11,8 @@ pub struct Memory {
 }
 
 impl Memory {
-    pub fn create() -> Memory {
-        Memory {
+    pub fn create() -> Self {
+        Self {
             data: [0; MEMORY_SIZE]
         }
     }
