@@ -97,7 +97,7 @@ impl Cpu<'_> {
         }
     }
 
-    fn handle_opcode(&mut self, ins: &Instruction<'_>, cur_addr: u16) -> u8 {
+    fn handle_opcode(&mut self, ins: &Instruction, cur_addr: u16) -> u8 {
         let opcode = ins.opcode;
         let mut cycles_additional = 0;
 

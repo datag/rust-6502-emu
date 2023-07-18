@@ -30,14 +30,14 @@ pub const JMP_IND: u8 = 0x6C;
 
 
 
-pub struct Instruction<'a> {
+pub struct Instruction {
     pub opcode: u8,
-    pub mnemonic: &'a str,
+    pub mnemonic: &'static str,
     pub bytes: u8,
     pub cycles: u8,
 }
 
-impl Instruction<'_> {
+impl Instruction {
     pub fn from_opcode(opcode: u8) -> Result<Self, ()> {
         match opcode {
             ADC_IMM => Ok(Self { opcode, mnemonic: "ADC", bytes: 2, cycles: 2 }),
@@ -69,7 +69,7 @@ impl Instruction<'_> {
     }
 }
 
-impl fmt::Debug for Instruction<'_> {
+impl fmt::Debug for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Instruction")
             .field("Opcode", &format!("0x{:02X}", self.opcode))
