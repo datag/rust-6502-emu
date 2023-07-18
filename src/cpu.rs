@@ -160,7 +160,7 @@ impl Cpu<'_> {
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
 
-        return cycles_additional;
+        cycles_additional
     }
 }
 
