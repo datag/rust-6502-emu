@@ -36,7 +36,7 @@ pub struct Cpu<'a> {
     pub cycles: u64,
 }
 
-impl Cpu<'_> {
+impl <'a> Cpu<'a> {
     pub fn create(mem: &mut Memory) -> Cpu {
         Cpu {
             // registers
