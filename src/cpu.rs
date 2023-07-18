@@ -138,7 +138,7 @@ impl Cpu<'_> {
             },
 
             BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
-                let rel: i8 = self.mem.read_u8(cur_addr) as i8;
+                let rel = self.mem.read_i8(cur_addr);
                 let jmp = match opcode {
                     BCC_REL => !self.sr.contains(StatusFlags::C),
                     BCS_REL => self.sr.contains(StatusFlags::C),

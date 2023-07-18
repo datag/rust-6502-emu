@@ -50,7 +50,7 @@ impl Memory {
 
         // B**
         self.write_u8(ADDR_RESET_VECTOR + 0, crate::instruction::BVS_REL);
-        self.write_u8(ADDR_RESET_VECTOR + 1, 2);        // (-2 as i8) as u8
+        self.write_u8(ADDR_RESET_VECTOR + 1, (-2 as i8) as u8);
 
         // some instruction
         self.write_u8(ADDR_RESET_VECTOR + 2, crate::instruction::ADC_IMM);
@@ -64,6 +64,10 @@ impl Memory {
 
     pub fn read_u8(&self, addr: u16) -> u8 {
         self.data[addr as usize]
+    }
+
+    pub fn read_i8(&self, addr: u16) -> i8 {
+        self.data[addr as usize] as i8
     }
 
     pub fn read_u16(&self, addr: u16) -> u16 {
