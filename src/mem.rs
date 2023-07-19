@@ -95,3 +95,84 @@ impl Memory {
         println!()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup() -> Memory {
+        let mut mem = Memory::create();
+        mem.reset();
+        mem
+    }
+
+    fn has_nonzero_value(array: &[u8]) -> bool {
+        array.iter().any(|&value| value != 0)
+    }
+
+    #[test]
+    fn initialized_with_zero() {
+        let mem = setup();
+
+        // all zero excluding VECTOR_RES (2 bytes)
+        assert_eq!(has_nonzero_value(&mem.data[1..VECTOR_RES as usize]), false);
+        assert_eq!(has_nonzero_value(&mem.data[(VECTOR_RES as usize)+2..]), false);
+    }
+
+    #[test]
+    fn addr_reset_vector_correct() {
+        let mem = setup();
+        assert_eq!(mem.read_u16(VECTOR_RES), ADDR_RESET_VECTOR);
+    }
+
+    #[test]
+    fn read_u8() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: u8 = 0xFE;
+        mem.data[addr as usize] = value;
+        assert_eq!(mem.read_u8(addr), value);
+    }
+
+    #[test]
+    fn read_i8() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: i8 = -120;
+        mem.data[addr as usize] = value as u8;
+        assert_eq!(mem.read_i8(addr), value);
+    }
+
+    #[test]
+    fn read_u16() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: u16 = 0xBEEF;
+        let lb: u8 = 0xEF;  // (value & 0x00FF) as u8;
+        let hb: u8 = 0xBE;  // ((value & 0xFF00) >> 8) as u8;
+        mem.data[(addr + 0) as usize] = lb;
+        mem.data[(addr + 1) as usize] = hb;
+        assert_eq!(mem.read_u16(addr), value);
+    }
+
+    #[test]
+    fn write_u8() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: u8 = 0xFE;
+        mem.write_u8(addr, value);
+        assert_eq!(mem.data[addr as usize], value);
+    }
+
+    #[test]
+    fn write_u16() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: u16 = 0xBEEF;
+        let lb: u8 = 0xEF;  // (value & 0x00FF) as u8;
+        let hb: u8 = 0xBE;  // ((value & 0xFF00) >> 8) as u8;
+        mem.write_u16(addr, value);
+        assert_eq!(mem.data[(addr + 0) as usize], lb);
+        assert_eq!(mem.data[(addr + 1) as usize], hb);
+    }
+}
