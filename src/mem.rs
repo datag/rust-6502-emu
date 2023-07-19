@@ -82,6 +82,10 @@ impl Memory {
         self.data[addr as usize] = value;
     }
 
+    pub fn write_i8(&mut self, addr: u16, value: i8) {
+        self.data[addr as usize] = value as u8;
+    }
+
     pub fn write_u16(&mut self, addr: u16, value: u16) {
         self.data[addr as usize] = (value & 0x00FF) as u8;                // LB
         self.data[(addr + 1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
@@ -162,6 +166,16 @@ mod tests {
         let value: u8 = 0xFE;
         mem.write_u8(addr, value);
         assert_eq!(mem.data[addr as usize], value);
+    }
+
+    #[test]
+    fn write_i8() {
+        let mut mem = setup();
+        let addr: u16 = 0x0F00;
+        let value: i8 = -120;
+        mem.write_i8(addr, value);
+        assert_eq!(mem.data[addr as usize], value as u8);
+        assert_eq!(mem.read_i8(addr), value);
     }
 
     #[test]
