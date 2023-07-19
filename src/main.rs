@@ -16,8 +16,8 @@ fn main() {
     print!("Data at reset vector address: ");
     mem.dump(ADDR_RESET_VECTOR, 16);
 
-    let mut cpu = Cpu::create(&mut mem);
-    cpu.reset();
+    let mut cpu = Cpu::create();
+    cpu.reset(&mut mem);
     //println!("After reset: {:#?}", cpu);
 
     // cpu.exec(2);
@@ -33,8 +33,8 @@ fn main() {
     // println!("After ADC #1 again: {:#?}", cpu);
 
     cpu.sr.set(StatusFlags::V, false);
-    cpu.exec(1);
+    cpu.exec(&mut mem, 1);
     println!("After B**: {:?}", cpu);
 
-    cpu.exec(10);
+    cpu.exec(&mut mem, 10);
 }

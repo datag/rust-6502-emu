@@ -22,7 +22,7 @@ bitflags! {
     }
 }
 
-pub struct Cpu<'a> {
+pub struct Cpu {
     pub pc: u16,
     pub ac: u8,
     pub x: u8,
@@ -30,14 +30,12 @@ pub struct Cpu<'a> {
     pub sr: StatusFlags,
     pub sp: u8,
 
-    pub mem: &'a mut Memory,
-
     // for debugging
     pub cycles: u64,
 }
 
-impl <'a> Cpu<'a> {
-    pub fn create(mem: &mut Memory) -> Cpu {
+impl Cpu {
+    pub fn create() -> Cpu {
         Cpu {
             // registers
             pc: 0,
@@ -49,27 +47,24 @@ impl <'a> Cpu<'a> {
 
             sp: 0xFF,   // [0x0100 - 0x01FF] in memory
 
-            // memory
-            mem,
-
             // debug
             cycles: 0,
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, mem: &mut Memory) {
         // load address from reset vector $FFFC and store it into PC
-        self.pc = self.mem.read_u16(VECTOR_RES);
+        self.pc = mem.read_u16(VECTOR_RES);
     }
 
-    pub fn exec(&mut self, max_cycles: u16) {
+    pub fn exec(&mut self, mem: &mut Memory, max_cycles: u16) {
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
         let mut cur_addr: u16;
 
         while cycles_to_execute > 0 {
             // load instruction from mem at PC
-            opcode = self.mem.read_u8(self.pc);
+            opcode = mem.read_u8(self.pc);
 
             // advance PC by 1 read opcode byte
             cur_addr = self.pc + 1;
@@ -83,7 +78,7 @@ impl <'a> Cpu<'a> {
                     self.pc += ins.bytes as u16;
 
                     // handle the opcode
-                    let cycles_additional = self.handle_opcode(&ins, cur_addr);
+                    let cycles_additional = self.handle_opcode(mem, &ins, cur_addr);
                     let cycles_consumed = ins.cycles + cycles_additional;
         
                     // decrease remaining cycle counter 
@@ -97,13 +92,13 @@ impl <'a> Cpu<'a> {
         }
     }
 
-    fn handle_opcode(&mut self, ins: &Instruction, cur_addr: u16) -> u8 {
+    fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
         let opcode = ins.opcode;
         let mut cycles_additional = 0;
 
         match opcode {
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
-                let value = self.mem.read_u8(cur_addr);
+                let value = mem.read_u8(cur_addr);
                 println!("value: ${:02X}", value);
 
                 self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xFF);        // FIXME
@@ -115,9 +110,9 @@ impl <'a> Cpu<'a> {
             }
 
             JMP_ABS | JMP_IND => {
-                let mut addr = self.mem.read_u16(cur_addr);
+                let mut addr = mem.read_u16(cur_addr);
                 if opcode == JMP_IND {
-                    addr = self.mem.read_u16(addr); // indirection: real target is at read addr
+                    addr = mem.read_u16(addr); // indirection: real target is at read addr
                 }
                 println!("addr: ${:04X}", addr);
                 self.pc = addr;
@@ -126,11 +121,11 @@ impl <'a> Cpu<'a> {
             BIT_ZPG | BIT_ABS => {
                 let addr: u16;
                 if opcode == BIT_ABS {
-                    addr = self.mem.read_u16(cur_addr);
+                    addr = mem.read_u16(cur_addr);
                 } else {
-                    addr = self.mem.read_u8(cur_addr) as u16;
+                    addr = mem.read_u8(cur_addr) as u16;
                 }
-                let value = self.mem.read_u8(addr);
+                let value = mem.read_u8(addr);
                 println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
                 self.sr.set(StatusFlags::N, (value & StatusFlags::N.bits()) != 0);    // transfer bit 7 of operand to N
                 self.sr.set(StatusFlags::V, (value & StatusFlags::V.bits()) != 0);    // transfer bit 6 of operand to V
@@ -138,7 +133,7 @@ impl <'a> Cpu<'a> {
             },
 
             BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
-                let rel = self.mem.read_i8(cur_addr);
+                let rel = mem.read_i8(cur_addr);
                 let jmp = match opcode {
                     BCC_REL => !self.sr.contains(StatusFlags::C),
                     BCS_REL => self.sr.contains(StatusFlags::C),
@@ -164,7 +159,7 @@ impl <'a> Cpu<'a> {
     }
 }
 
-impl fmt::Debug for Cpu<'_> {
+impl fmt::Debug for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let f_n = if self.sr.contains(StatusFlags::N) {"N"} else {"-"};
         let f_z = if self.sr.contains(StatusFlags::Z) {"Z"} else {"-"};
