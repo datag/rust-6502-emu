@@ -21,12 +21,6 @@ impl Memory {
         // initialize with zero
         self.data = [0; MEMORY_SIZE];
 
-        // more initialization
-        self.init();
-    }
-
-    fn init(&mut self) {
-        // init reset vector at $FFFC to point to $E000 for initial PC
         self.write_u16(VECTOR_RES, ADDR_RESET_VECTOR);
     }
 
