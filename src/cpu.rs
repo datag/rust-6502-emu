@@ -52,12 +52,12 @@ impl Cpu {
         }
     }
 
-    fn is_page_crossed(cur_addr: u16, rel_addr: i8) -> bool {
+    fn is_page_crossed(cur_addr: u16, rel: i8) -> bool {
         // divide current address by 256 (0x100) to get the current page
         let current_page = cur_addr >> 8;
 
         // calculate the target page
-        let target_page = (cur_addr.wrapping_add(rel_addr as u16)) >> 8;
+        let target_page = (cur_addr.wrapping_add(rel as u16)) >> 8;
 
         current_page != target_page
     }
@@ -173,8 +173,10 @@ impl Cpu {
                 };
                 println!("rel: ${:02X} {}  jmp: {}", rel, rel, jmp);
                 if jmp {
+                    // +1 if branch occurs on same page, +2 if on different page
+                    cycles_additional += if Self::is_page_crossed(self.pc, rel) { 2 } else { 1 };
+
                     self.pc = self.pc.wrapping_add(rel as u16);     // add/sub relative address
-                    cycles_additional += 1;   // TODO: +2 if on different page
                 }
             }
 
@@ -309,43 +311,49 @@ mod tests {
         let mem_ref = &mut mem;
 
         // test with both positive and negative relative address
-        for rel_addr in [-128, 16, 0, -16, 127] {
-            let addr_nobranch = ADDR_RESET_VECTOR + 2;
-            let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel_addr as u16);
+        for rel in [-128, 16, 0, -16, 127] {
+            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel, StatusFlags::C, false);
+            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel, StatusFlags::empty(), true);
 
-            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel_addr, StatusFlags::C, addr_nobranch);
-            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel_addr, StatusFlags::empty(), addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel, StatusFlags::C, true);
+            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel, StatusFlags::empty(), false);
 
-            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel_addr, StatusFlags::C, addr_branch);
-            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel, StatusFlags::Z, true);
+            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel, StatusFlags::empty(), false);
 
-            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel_addr, StatusFlags::Z, addr_branch);
-            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel, StatusFlags::Z, false);
+            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel, StatusFlags::empty(), true);
 
-            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel_addr, StatusFlags::Z, addr_nobranch);
-            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel_addr, StatusFlags::empty(), addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel, StatusFlags::N, false);
+            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel, StatusFlags::empty(), true);
 
-            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel_addr, StatusFlags::N, addr_nobranch);
-            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel_addr, StatusFlags::empty(), addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel, StatusFlags::N, true);
+            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel, StatusFlags::empty(), false);
 
-            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel_addr, StatusFlags::N, addr_branch);
-            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel, StatusFlags::V, false);
+            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel, StatusFlags::empty(), true);
 
-            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel_addr, StatusFlags::V, addr_nobranch);
-            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel_addr, StatusFlags::empty(), addr_branch);
-
-            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel_addr, StatusFlags::V, addr_branch);
-            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel, StatusFlags::V, true);
+            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel, StatusFlags::empty(), false);
         }
     }
 
-    fn ins_bxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, rel_addr: i8, srf: StatusFlags, pc_expect: u16) {
+    fn ins_bxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, rel: i8, srf: StatusFlags, jmp: bool) {
+        let addr_nobranch = ADDR_RESET_VECTOR + 2;
+        let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel as u16);
+
         cpu.reset(mem);
         cpu.sr.insert(srf);
         mem.write_u8(ADDR_RESET_VECTOR + 0, opcode);
-        mem.write_i8(ADDR_RESET_VECTOR + 1, rel_addr);
+        mem.write_i8(ADDR_RESET_VECTOR + 1, rel);
         cpu.exec(mem, 1);
-        assert_eq!(cpu.pc, pc_expect);
-        // TODO: also test cycles for both branch to same page and different page
+        assert_eq!(cpu.pc, if jmp { addr_branch } else {addr_nobranch});
+
+        let mut expected_cycles = 2;
+        if jmp {
+            // jump occured: same page -> +1, page crossed -> +2
+            expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };
+        }
+        assert_eq!(cpu.cycles, expected_cycles);
     }
 }
