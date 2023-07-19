@@ -123,6 +123,8 @@ impl Cpu {
         let mut cycles_additional = 0;
 
         match opcode {
+            NOP => println!("NOP"),
+
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
                 let value = mem.read_u8(cur_addr);
                 println!("value: ${:02X}", value);
@@ -250,7 +252,20 @@ mod tests {
         assert_eq!(cpu.cycles, 0);
     }
 
-    // TODO: test simple instruction for num of consumed cycles
+    #[test]
+    fn ins_nop() {
+        let (mut cpu, mut mem) = setup();
+
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP);
+        let pc_orig = cpu.pc;
+        cpu.exec(&mut mem, 1);
+
+        // verify we're at next instruction
+        assert_eq!(cpu.pc, pc_orig + 1);
+
+        // verify 2 cycles happened
+        assert_eq!(cpu.cycles, Instruction::from_opcode(NOP).unwrap().cycles as u64);
+    }
 
     #[test]
     fn ins_jmp() {

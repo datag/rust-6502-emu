@@ -28,7 +28,8 @@ pub const BIT_ABS: u8 = 0x2C;
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
 
-
+// NOP - No Operation
+pub const NOP: u8 = 0xEA;
 
 pub struct Instruction {
     pub opcode: u8,
@@ -63,6 +64,8 @@ impl Instruction {
 
             JMP_ABS => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),
+
+            NOP =>     Ok(Self { opcode, mnemonic: "NOP", bytes: 1, cycles: 2 }),
 
             _ => Err(()),
         }
