@@ -52,6 +52,16 @@ impl Cpu {
         }
     }
 
+    fn is_page_crossed(cur_addr: u16, rel_addr: i8) -> bool {
+        // divide current address by 256 (0x100) to get the current page
+        let current_page = cur_addr >> 8;
+
+        // calculate the target page
+        let target_page = (cur_addr.wrapping_add(rel_addr as u16)) >> 8;
+
+        current_page != target_page
+    }
+
     pub fn reset(&mut self, mem: &mut Memory) {
         mem.reset();
 
@@ -210,6 +220,21 @@ mod tests {
     }
 
     #[test]
+    fn is_page_crossed() {
+        assert!(!Cpu::is_page_crossed(0x01FF, -128));   // Target: 0x017F    C-Page: 1   T-Page: 1
+        assert!(Cpu::is_page_crossed(0x0200, -128));    // Target: 0x0180    C-Page: 2   T-Page: 1   -> crossed
+
+        assert!(!Cpu::is_page_crossed(0x01FF, -1));     // Target: 0x01FE    C-Page: 1   T-Page: 1
+        assert!(Cpu::is_page_crossed(0x0200, -1));      // Target: 0x01FF    C-Page: 2   T-Page: 1   -> crossed
+
+        assert!(Cpu::is_page_crossed(0x01FF, 1));       // Target: 0x0200    C-Page: 1   T-Page: 2   -> crossed
+        assert!(!Cpu::is_page_crossed(0x0200, 1));      // Target: 0x0201    C-Page: 2   T-Page: 2
+
+        assert!(Cpu::is_page_crossed(0x01FF, 127));     // Target: 0x027E    C-Page: 1   T-Page: 2   -> crossed
+        assert!(!Cpu::is_page_crossed(0x0200, 127));    // Target: 0x027F    C-Page: 2   T-Page: 2
+    }
+
+    #[test]
     fn initial_state() {
         let (cpu, _) = setup();
 
@@ -283,10 +308,8 @@ mod tests {
         let cpu_ref = &mut cpu;
         let mem_ref = &mut mem;
 
-        // BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL
-
         // test with both positive and negative relative address
-        for rel_addr in [16, -16] {
+        for rel_addr in [-128, 16, 0, -16, 127] {
             let addr_nobranch = ADDR_RESET_VECTOR + 2;
             let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel_addr as u16);
 
