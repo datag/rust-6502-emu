@@ -2,7 +2,7 @@
 
 ## Status
 
-* Opcodes: https://docs.google.com/spreadsheets/d/1L-864UBW4wkh5y9SUwTcCbbFewtKfADZxqDlOhk8pA4
+* Implemented Opcodes: https://docs.google.com/spreadsheets/d/1L-864UBW4wkh5y9SUwTcCbbFewtKfADZxqDlOhk8pA4
 
 ## Sources
 

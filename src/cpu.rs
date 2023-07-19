@@ -4,9 +4,11 @@ use bitflags::bitflags;
 use crate::instruction::*;
 use crate::mem::Memory;
 
-pub const VECTOR_RES: u16 = 0xfffc;
+pub const VECTOR_RES: u16 = 0xFFFC;
+pub const INITIAL_STACK_POINTER: u8 = 0xFF;        // [0x0100 - 0x01FF] in memory
 
 bitflags! {
+    #[derive(PartialEq, Debug)]
     pub struct StatusFlags: u8 {
         const C = 0b00000001;          // [0] Carry Flag
         const Z = 0b00000010;          // [1] Zero Flag
@@ -65,7 +67,7 @@ impl Cpu {
         self.pc = mem.read_u16(VECTOR_RES);
 
         // stack pointer
-        self.sp = 0xFF;   // [0x0100 - 0x01FF] in memory
+        self.sp = INITIAL_STACK_POINTER;
 
         // [debug]
         self.cycles = 0;
@@ -191,5 +193,83 @@ impl fmt::Debug for Cpu {
             .field("SP", &format!("0x{:02X}", self.sp))
             .field("[cycles]", &self.cycles)
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::mem::ADDR_RESET_VECTOR;
+
+    use super::*;
+
+    fn setup() -> (Cpu, Memory) {
+        let mut mem = Memory::create();
+        let mut cpu = Cpu::create();
+        cpu.reset(&mut mem);
+        (cpu, mem)
+    }
+
+    #[test]
+    fn initial_state() {
+        let (cpu, _) = setup();
+
+        assert_eq!(cpu.ac, 0);
+        assert_eq!(cpu.x, 0);
+        assert_eq!(cpu.y, 0);
+        assert_eq!(cpu.sr, StatusFlags::RESERVED);
+        assert_eq!(cpu.sp, INITIAL_STACK_POINTER);
+        assert_eq!(cpu.pc, ADDR_RESET_VECTOR);      // ensures working memory as well
+
+        assert_eq!(cpu.cycles, 0);
+    }
+
+    #[test]
+    fn ins_jmp() {
+        let (mut cpu, mut mem) = setup();
+        let target_addr: u16 = ADDR_RESET_VECTOR + 0x10;
+        let target_addr_ind: u16 = 0xAA00;
+
+        // JMP ABS
+        cpu.reset(&mut mem);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, JMP_ABS);
+        mem.write_u16(ADDR_RESET_VECTOR + 1, target_addr);
+        cpu.exec(&mut mem, 1);
+        assert_eq!(cpu.pc, target_addr);
+
+        // JMP IND
+        cpu.reset(&mut mem);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, JMP_IND);
+        mem.write_u16(ADDR_RESET_VECTOR + 1, target_addr);
+        mem.write_u16(target_addr, target_addr_ind);
+        cpu.exec(&mut mem, 1);
+        assert_eq!(cpu.pc, target_addr_ind);
+    }
+
+    #[test]
+    fn ins_bit() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [BIT_ZPG, BIT_ABS] {
+            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, 0x01, StatusFlags::RESERVED);
+            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z);
+            ins_bit_(&mut cpu, &mut mem, opcode, 0x00, 0x01, StatusFlags::RESERVED | StatusFlags::Z);
+            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, StatusFlags::N.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::N);
+            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, StatusFlags::V.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::V);
+        }
+    }
+
+    fn ins_bit_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, ac: u8, value: u8, sr_expect: StatusFlags) {
+        let addr: u16 = 0x000A;
+        cpu.reset(mem);
+        cpu.ac = ac;
+        mem.write_u8(addr, value);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, BIT_ZPG);
+        if opcode == BIT_ZPG {
+            mem.write_u8(ADDR_RESET_VECTOR + 1, (addr & 0xFF) as u8);
+        } else {
+            mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+        }
+        cpu.exec(mem, 1);
+        assert_eq!(cpu.sr, sr_expect);
     }
 }
