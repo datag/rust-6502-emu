@@ -9,7 +9,7 @@ fn main() {
     println!("rust-6502-emu");
 
     let mut mem = Memory::create();
-    mem.init();
+    mem.reset();
 
     print!("Reset vector: ");
     mem.dump(VECTOR_RES, 2);
@@ -37,4 +37,5 @@ fn main() {
     println!("After B**: {:?}", cpu);
 
     cpu.exec(&mut mem, 10);
+
 }

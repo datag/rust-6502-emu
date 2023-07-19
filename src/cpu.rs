@@ -42,10 +42,8 @@ impl Cpu {
             ac: 0,
             x: 0,
             y: 0,
-
-            sr: StatusFlags::RESERVED,
-
-            sp: 0xFF,   // [0x0100 - 0x01FF] in memory
+            sr: StatusFlags::empty(),
+            sp: 0,
 
             // debug
             cycles: 0,
@@ -53,8 +51,24 @@ impl Cpu {
     }
 
     pub fn reset(&mut self, mem: &mut Memory) {
+        mem.reset();
+
+        // AC, X and Y
+        self.ac = 0;
+        self.x = 0;
+        self.y = 0;
+
+        // only the reserved bit 5 is set; the flag B is 0 and the others may be uninitialized (?)
+        self.sr = StatusFlags::RESERVED;
+
         // load address from reset vector $FFFC and store it into PC
         self.pc = mem.read_u16(VECTOR_RES);
+
+        // stack pointer
+        self.sp = 0xFF;   // [0x0100 - 0x01FF] in memory
+
+        // [debug]
+        self.cycles = 0;
     }
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u16) {
