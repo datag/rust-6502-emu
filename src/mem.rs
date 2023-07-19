@@ -28,7 +28,9 @@ impl Memory {
     fn init(&mut self) {
         // init reset vector at $FFFC to point to $E000 for initial PC
         self.write_u16(VECTOR_RES, ADDR_RESET_VECTOR);
+    }
 
+    pub fn demo(&mut self) {
         // demo data
         for i in 0..16 {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);

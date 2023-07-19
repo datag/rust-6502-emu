@@ -20,6 +20,9 @@ fn main() {
     cpu.reset(&mut mem);
     //println!("After reset: {:#?}", cpu);
 
+    // demo data
+    mem.demo();
+
     // cpu.exec(2);
     // println!("After #1 ADC: {:#?}", cpu);
 
