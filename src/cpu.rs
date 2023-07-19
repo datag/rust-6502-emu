@@ -223,6 +223,8 @@ mod tests {
         assert_eq!(cpu.cycles, 0);
     }
 
+    // TODO: test simple instruction for num of consumed cycles
+
     #[test]
     fn ins_jmp() {
         let (mut cpu, mut mem) = setup();
@@ -248,13 +250,15 @@ mod tests {
     #[test]
     fn ins_bit() {
         let (mut cpu, mut mem) = setup();
+        let cpu_ref = &mut cpu;
+        let mem_ref = &mut mem;
 
         for opcode in [BIT_ZPG, BIT_ABS] {
-            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, 0x01, StatusFlags::RESERVED);
-            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z);
-            ins_bit_(&mut cpu, &mut mem, opcode, 0x00, 0x01, StatusFlags::RESERVED | StatusFlags::Z);
-            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, StatusFlags::N.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::N);
-            ins_bit_(&mut cpu, &mut mem, opcode, 0x01, StatusFlags::V.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::V);
+            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, 0x01, StatusFlags::RESERVED);
+            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z);
+            ins_bit_(cpu_ref, mem_ref, opcode, 0x00, 0x01, StatusFlags::RESERVED | StatusFlags::Z);
+            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, StatusFlags::N.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::N);
+            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, StatusFlags::V.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::V);
         }
     }
 
@@ -263,7 +267,7 @@ mod tests {
         cpu.reset(mem);
         cpu.ac = ac;
         mem.write_u8(addr, value);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, BIT_ZPG);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, opcode);
         if opcode == BIT_ZPG {
             mem.write_u8(ADDR_RESET_VECTOR + 1, (addr & 0xFF) as u8);
         } else {
@@ -271,5 +275,54 @@ mod tests {
         }
         cpu.exec(mem, 1);
         assert_eq!(cpu.sr, sr_expect);
+    }
+
+    #[test]
+    fn ins_bxx() {
+        let (mut cpu, mut mem) = setup();
+        let cpu_ref = &mut cpu;
+        let mem_ref = &mut mem;
+
+        // BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL
+
+        // test with both positive and negative relative address
+        for rel_addr in [16, -16] {
+            let addr_nobranch = ADDR_RESET_VECTOR + 2;
+            let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel_addr as u16);
+
+            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel_addr, StatusFlags::C, addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel_addr, StatusFlags::empty(), addr_branch);
+
+            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel_addr, StatusFlags::C, addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+
+            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel_addr, StatusFlags::Z, addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+
+            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel_addr, StatusFlags::Z, addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel_addr, StatusFlags::empty(), addr_branch);
+
+            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel_addr, StatusFlags::N, addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel_addr, StatusFlags::empty(), addr_branch);
+
+            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel_addr, StatusFlags::N, addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+
+            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel_addr, StatusFlags::V, addr_nobranch);
+            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel_addr, StatusFlags::empty(), addr_branch);
+
+            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel_addr, StatusFlags::V, addr_branch);
+            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel_addr, StatusFlags::empty(), addr_nobranch);
+        }
+    }
+
+    fn ins_bxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, rel_addr: i8, srf: StatusFlags, pc_expect: u16) {
+        cpu.reset(mem);
+        cpu.sr.insert(srf);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, opcode);
+        mem.write_i8(ADDR_RESET_VECTOR + 1, rel_addr);
+        cpu.exec(mem, 1);
+        assert_eq!(cpu.pc, pc_expect);
+        // TODO: also test cycles for both branch to same page and different page
     }
 }
