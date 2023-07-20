@@ -4,7 +4,7 @@ use bitflags::bitflags;
 use crate::instruction::*;
 use crate::mem::Memory;
 
-pub const VECTOR_RES: u16 = 0xFFFC;
+pub const VECTOR_RES: u16 = 0xFFFC;                     // 0xFFFC LB, 0xFFFF HB for reading reset vector address
 pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in memory; CPU starts with SP=0 and decrements 3x which is 0xFD
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 

@@ -13,8 +13,17 @@
   * https://web.archive.org/web/20190908035706/http://www.obelisk.me.uk/6502/addressing.html
 * https://sta.c64.org/cbm64mem.html
 * https://www.nesdev.org/wiki/Status_flags
+* https://www.pagetable.com/?p=410
 
 ## Tools
 
 * https://www.masswerk.at/6502/
 * https://cc65.github.io/
+
+## TODO
+
+* lib/cli
+* map ROM
+* method doc
+* refactor: set ZN flags for value
+* factor address modes

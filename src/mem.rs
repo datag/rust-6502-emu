@@ -79,7 +79,7 @@ impl Memory {
     }
 
     pub fn read_u16(&self, addr: u16) -> u16 {
-        ((self.data[(addr + 1) as usize] as u16) << 8) | (self.data[addr as usize] as u16)
+        (self.data[addr as usize] as u16) /* LB */ | ((self.data[(addr + 1) as usize] as u16) << 8) /* HB */
     }
 
     pub fn write_u8<T: Into<Option<u16>>>(&mut self, addr: T, value: u8) {
