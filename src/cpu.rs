@@ -323,108 +323,103 @@ mod tests {
     #[test]
     fn ins_bit() {
         let (mut cpu, mut mem) = setup();
-        let cpu_ref = &mut cpu;
-        let mem_ref = &mut mem;
 
         for opcode in [BIT_ZPG, BIT_ABS] {
-            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, 0x01, StatusFlags::RESERVED);
-            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z);
-            ins_bit_(cpu_ref, mem_ref, opcode, 0x00, 0x01, StatusFlags::RESERVED | StatusFlags::Z);
-            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, StatusFlags::N.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::N);
-            ins_bit_(cpu_ref, mem_ref, opcode, 0x01, StatusFlags::V.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::V);
+            for (ac, value, sr_expect) in [
+                (0x01, 0x01, StatusFlags::RESERVED),
+                (0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x00, 0x01, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, StatusFlags::N.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::N),
+                (0x01, StatusFlags::V.bits(), StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::V),
+            ] {
+                let addr: u16 = 0x000A;
+                cpu.reset(&mut mem);
+                cpu.ac = ac;
+                mem.write_u8(addr, value);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                if opcode == BIT_ZPG {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.sr, sr_expect);
+            }
         }
-    }
-
-    fn ins_bit_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, ac: u8, value: u8, sr_expect: StatusFlags) {
-        let addr: u16 = 0x000A;
-        cpu.reset(mem);
-        cpu.ac = ac;
-        mem.write_u8(addr, value);
-        mem.write_u8(ADDR_RESET_VECTOR, opcode);
-        if opcode == BIT_ZPG {
-            mem.write_u8(None, (addr & 0xFF) as u8);
-        } else {
-            mem.write_u16(None, addr);
-        }
-        cpu.exec(mem, 1);
-        assert_eq!(cpu.sr, sr_expect);
     }
 
     #[test]
     fn ins_cxxsxx() {
         let (mut cpu, mut mem) = setup();
-        let cpu_ref = &mut cpu;
-        let mem_ref = &mut mem;
 
-        ins_cxxsxx_(cpu_ref, mem_ref, CLC, StatusFlags::RESERVED | StatusFlags::C, StatusFlags::RESERVED);
-        ins_cxxsxx_(cpu_ref, mem_ref, CLD, StatusFlags::RESERVED | StatusFlags::D, StatusFlags::RESERVED);
-        ins_cxxsxx_(cpu_ref, mem_ref, CLI, StatusFlags::RESERVED | StatusFlags::I, StatusFlags::RESERVED);
-        ins_cxxsxx_(cpu_ref, mem_ref, CLV, StatusFlags::RESERVED | StatusFlags::V, StatusFlags::RESERVED);
+        for (opcode, sr_before, sr_expect) in [
+            (CLC, StatusFlags::RESERVED | StatusFlags::C, StatusFlags::RESERVED),
+            (CLD, StatusFlags::RESERVED | StatusFlags::D, StatusFlags::RESERVED),
+            (CLI, StatusFlags::RESERVED | StatusFlags::I, StatusFlags::RESERVED),
+            (CLV, StatusFlags::RESERVED | StatusFlags::V, StatusFlags::RESERVED),
 
-        ins_cxxsxx_(cpu_ref, mem_ref, SEC, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::C);
-        ins_cxxsxx_(cpu_ref, mem_ref, SED, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::D);
-        ins_cxxsxx_(cpu_ref, mem_ref, SEI, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::I);
-    }
-
-    fn ins_cxxsxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, sr_before: StatusFlags, sr_expect: StatusFlags) {
-        cpu.reset(mem);
-        cpu.sr = sr_before;
-        mem.write_u8(ADDR_RESET_VECTOR, opcode);
-        cpu.exec(mem, 1);
-        assert_eq!(cpu.sr, sr_expect);
+            (SEC, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::C),
+            (SED, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::D),
+            (SEI, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::I),
+        ] {
+            cpu.reset(&mut mem);
+            cpu.sr = sr_before;
+            mem.write_u8(ADDR_RESET_VECTOR, opcode);
+            cpu.exec(&mut mem, 1);
+            assert_eq!(cpu.sr, sr_expect);
+        }
     }
 
     #[test]
     fn ins_bxx() {
         let (mut cpu, mut mem) = setup();
-        let cpu_ref = &mut cpu;
-        let mem_ref = &mut mem;
 
         // test with both positive and negative relative address
         for rel in [-128, 16, 0, -16, 127] {
-            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel, StatusFlags::C, false);
-            ins_bxx_(cpu_ref, mem_ref, BCC_REL, rel, StatusFlags::empty(), true);
+            for (opcode, srf, jmp) in [
+                (BCC_REL, StatusFlags::C, false),
+                (BCC_REL, StatusFlags::empty(), true),
 
-            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel, StatusFlags::C, true);
-            ins_bxx_(cpu_ref, mem_ref, BCS_REL, rel, StatusFlags::empty(), false);
+                (BCS_REL, StatusFlags::C, true),
+                (BCS_REL, StatusFlags::empty(), false),
 
-            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel, StatusFlags::Z, true);
-            ins_bxx_(cpu_ref, mem_ref, BEQ_REL, rel, StatusFlags::empty(), false);
+                (BEQ_REL, StatusFlags::Z, true),
+                (BEQ_REL, StatusFlags::empty(), false),
 
-            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel, StatusFlags::Z, false);
-            ins_bxx_(cpu_ref, mem_ref, BNE_REL, rel, StatusFlags::empty(), true);
+                (BNE_REL, StatusFlags::Z, false),
+                (BNE_REL, StatusFlags::empty(), true),
 
-            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel, StatusFlags::N, false);
-            ins_bxx_(cpu_ref, mem_ref, BPL_REL, rel, StatusFlags::empty(), true);
+                (BPL_REL, StatusFlags::N, false),
+                (BPL_REL, StatusFlags::empty(), true),
 
-            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel, StatusFlags::N, true);
-            ins_bxx_(cpu_ref, mem_ref, BMI_REL, rel, StatusFlags::empty(), false);
+                (BMI_REL, StatusFlags::N, true),
+                (BMI_REL, StatusFlags::empty(), false),
 
-            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel, StatusFlags::V, false);
-            ins_bxx_(cpu_ref, mem_ref, BVC_REL, rel, StatusFlags::empty(), true);
+                (BVC_REL, StatusFlags::V, false),
+                (BVC_REL, StatusFlags::empty(), true),
 
-            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel, StatusFlags::V, true);
-            ins_bxx_(cpu_ref, mem_ref, BVS_REL, rel, StatusFlags::empty(), false);
+                (BVS_REL, StatusFlags::V, true),
+                (BVS_REL, StatusFlags::empty(), false),
+            ] {
+                let addr_nobranch = ADDR_RESET_VECTOR + 2;
+                let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel as u16);
+
+                cpu.reset(&mut mem);
+                cpu.sr.insert(srf);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_i8(None, rel);
+                cpu.exec(&mut mem, 1);
+
+                assert_eq!(cpu.pc, if jmp { addr_branch } else { addr_nobranch });
+        
+                let mut expected_cycles = 2;
+                if jmp {
+                    // jump occured: same page -> +1, page crossed -> +2
+                    expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };
+                }
+                assert_eq!(cpu.cycles, expected_cycles);
+            }
         }
-    }
-
-    fn ins_bxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, rel: i8, srf: StatusFlags, jmp: bool) {
-        let addr_nobranch = ADDR_RESET_VECTOR + 2;
-        let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel as u16);
-
-        cpu.reset(mem);
-        cpu.sr.insert(srf);
-        mem.write_u8(ADDR_RESET_VECTOR, opcode);
-        mem.write_i8(None, rel);
-        cpu.exec(mem, 1);
-        assert_eq!(cpu.pc, if jmp { addr_branch } else {addr_nobranch});
-
-        let mut expected_cycles = 2;
-        if jmp {
-            // jump occured: same page -> +1, page crossed -> +2
-            expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };
-        }
-        assert_eq!(cpu.cycles, expected_cycles);
     }
 
     #[test]
