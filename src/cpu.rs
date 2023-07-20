@@ -168,6 +168,14 @@ impl Cpu {
                 self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
             },
 
+            CLC => self.sr.remove(StatusFlags::C),
+            CLD => self.sr.remove(StatusFlags::D),
+            CLI => self.sr.remove(StatusFlags::I),
+            CLV => self.sr.remove(StatusFlags::V),
+            SEC => self.sr.insert(StatusFlags::C),
+            SED => self.sr.insert(StatusFlags::D),
+            SEI => self.sr.insert(StatusFlags::I),
+
             BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
                 let rel = mem.read_i8(cur_addr);
                 let jmp = match opcode {
@@ -338,6 +346,30 @@ mod tests {
         } else {
             mem.write_u16(None, addr);
         }
+        cpu.exec(mem, 1);
+        assert_eq!(cpu.sr, sr_expect);
+    }
+
+    #[test]
+    fn ins_cxxsxx() {
+        let (mut cpu, mut mem) = setup();
+        let cpu_ref = &mut cpu;
+        let mem_ref = &mut mem;
+
+        ins_cxxsxx_(cpu_ref, mem_ref, CLC, StatusFlags::RESERVED | StatusFlags::C, StatusFlags::RESERVED);
+        ins_cxxsxx_(cpu_ref, mem_ref, CLD, StatusFlags::RESERVED | StatusFlags::D, StatusFlags::RESERVED);
+        ins_cxxsxx_(cpu_ref, mem_ref, CLI, StatusFlags::RESERVED | StatusFlags::I, StatusFlags::RESERVED);
+        ins_cxxsxx_(cpu_ref, mem_ref, CLV, StatusFlags::RESERVED | StatusFlags::V, StatusFlags::RESERVED);
+
+        ins_cxxsxx_(cpu_ref, mem_ref, SEC, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::C);
+        ins_cxxsxx_(cpu_ref, mem_ref, SED, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::D);
+        ins_cxxsxx_(cpu_ref, mem_ref, SEI, StatusFlags::RESERVED, StatusFlags::RESERVED | StatusFlags::I);
+    }
+
+    fn ins_cxxsxx_(cpu: &mut Cpu, mem: &mut Memory, opcode: u8, sr_before: StatusFlags, sr_expect: StatusFlags) {
+        cpu.reset(mem);
+        cpu.sr = sr_before;
+        mem.write_u8(ADDR_RESET_VECTOR, opcode);
         cpu.exec(mem, 1);
         assert_eq!(cpu.sr, sr_expect);
     }

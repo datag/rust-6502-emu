@@ -24,6 +24,15 @@ pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
 pub const BIT_ZPG: u8 = 0x24;
 pub const BIT_ABS: u8 = 0x2C;
 
+// Flag Instructions
+pub const CLC: u8 = 0x18;
+pub const CLD: u8 = 0xD8;
+pub const CLI: u8 = 0x58;
+pub const CLV: u8 = 0xB8;
+pub const SEC: u8 = 0x38;
+pub const SED: u8 = 0xF8;
+pub const SEI: u8 = 0x78;
+
 // INC - Increment Memory by One
 pub const INC_ZPG: u8 = 0xE6;
 pub const INC_ZPX: u8 = 0xF6;
@@ -73,6 +82,14 @@ impl Instruction {
 
             BIT_ZPG => Ok(Self { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Self { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
+
+            CLC => Ok(Self { opcode, mnemonic: "CLC", bytes: 1, cycles: 2 }),
+            CLD => Ok(Self { opcode, mnemonic: "CLS", bytes: 1, cycles: 2 }),
+            CLI => Ok(Self { opcode, mnemonic: "CLI", bytes: 1, cycles: 2 }),
+            CLV => Ok(Self { opcode, mnemonic: "CLV", bytes: 1, cycles: 2 }),
+            SEC => Ok(Self { opcode, mnemonic: "SEC", bytes: 1, cycles: 2 }),
+            SED => Ok(Self { opcode, mnemonic: "SED", bytes: 1, cycles: 2 }),
+            SEI => Ok(Self { opcode, mnemonic: "SEI", bytes: 1, cycles: 2 }),
 
             INC_ZPG => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 5 }),
             INC_ZPX => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 6 }),
