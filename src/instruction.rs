@@ -30,6 +30,12 @@ pub const INC_ZPX: u8 = 0xF6;
 pub const INC_ABS: u8 = 0xEE;
 pub const INC_ABX: u8 = 0xFE;
 
+// DEC - Decrement Memory by One
+pub const DEC_ZPG: u8 = 0xC6;
+pub const DEC_ZPX: u8 = 0xD6;
+pub const DEC_ABS: u8 = 0xCE;
+pub const DEC_ABX: u8 = 0xDE;
+
 // JMP - Jump to New Location
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
@@ -72,6 +78,11 @@ impl Instruction {
             INC_ZPX => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 6 }),
             INC_ABS => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 6 }),
             INC_ABX => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 7 }),
+
+            DEC_ZPG => Ok(Self { opcode, mnemonic: "DEC", bytes: 2, cycles: 5 }),
+            DEC_ZPX => Ok(Self { opcode, mnemonic: "DEC", bytes: 2, cycles: 6 }),
+            DEC_ABS => Ok(Self { opcode, mnemonic: "DEC", bytes: 3, cycles: 6 }),
+            DEC_ABX => Ok(Self { opcode, mnemonic: "DEC", bytes: 3, cycles: 7 }),
 
             JMP_ABS => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),

@@ -190,15 +190,16 @@ impl Cpu {
                 }
             }
 
-            INC_ZPG | INC_ZPX | INC_ABS | INC_ABX => {
+            INC_ZPG | INC_ZPX | INC_ABS | INC_ABX | DEC_ZPG | DEC_ZPX | DEC_ABS | DEC_ABX => {
                 // TODO: possible page crossing additional cycle for ZPX and ABX?
                 let addr: u16;
                 match opcode {
-                    INC_ZPG | INC_ZPX => addr = mem.read_u8(cur_addr) as u16 + if opcode == INC_ZPX { self.x } else { 0 } as u16,
-                    INC_ABS | INC_ABX => addr = mem.read_u16(cur_addr) + if opcode == INC_ABX { self.x } else { 0 } as u16,
-                    _ => panic!("Undefined INC opcode {:02X}", opcode),
+                    INC_ZPG | INC_ZPX | DEC_ZPG | DEC_ZPX => addr = mem.read_u8(cur_addr) as u16 + if opcode == INC_ZPX { self.x } else { 0 } as u16,
+                    INC_ABS | INC_ABX | DEC_ABS | DEC_ABX => addr = mem.read_u16(cur_addr) + if opcode == INC_ABX { self.x } else { 0 } as u16,
+                    _ => panic!("Undefined INC/DEC opcode {:02X}", opcode),
                 }
-                let value = mem.read_u8(addr).wrapping_add(1);
+                let mut value: u8 = mem.read_u8(addr);
+                if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
                 mem.write_u8(addr, value);
                 self.sr.set(StatusFlags::Z, value == 0);
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
@@ -395,10 +396,10 @@ mod tests {
     }
 
     #[test]
-    fn ins_inc() {
+    fn ins_incdec() {
         let (mut cpu, mut mem) = setup();
 
-        for opcode in [INC_ZPG, INC_ZPX | INC_ABS | INC_ABX] {
+        for opcode in [INC_ZPG, INC_ZPX | INC_ABS | INC_ABX | DEC_ZPG, DEC_ZPX | DEC_ABS | DEC_ABX] {
             for value in [0xFE, 0xFF] {
                 let rel_addr: u8 = 0xAA;
                 let abs_addr: u16 = 0xCAFE;
@@ -408,15 +409,15 @@ mod tests {
 
                 let mut addr: u16;
                 match opcode {
-                    INC_ZPG | INC_ZPX => {
+                    INC_ZPG | INC_ZPX | DEC_ZPG | DEC_ZPX => {
                         addr = rel_addr as u16;
                         mem.write_u8(None, rel_addr);
                     },
-                    INC_ABS | INC_ABX => {
+                    INC_ABS | INC_ABX | DEC_ABS | DEC_ABX => {
                         addr = abs_addr;
                         mem.write_u16(None, abs_addr);
                     },
-                    _ => panic!("Unhandled test case INC {:02X}", opcode)
+                    _ => panic!("Unhandled test case INC/DEC {:02X}", opcode)
                 }
                 
                 if matches!(opcode, INC_ZPX | INC_ABX) {
@@ -427,7 +428,7 @@ mod tests {
                 cpu.exec(&mut mem, 1);
 
                 let result = mem.read_u8(addr);
-                assert_eq!(result, value.wrapping_add(1));
+                assert_eq!(result, if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value.wrapping_add(1) } else { value.wrapping_sub(1) });
                 if result == 0 { assert!(cpu.sr.contains(StatusFlags::Z),) }
                 if result & 0b10000000 != 0 { assert!(cpu.sr.contains(StatusFlags::N)) }
             }
