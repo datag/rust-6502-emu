@@ -39,11 +39,19 @@ pub const INC_ZPX: u8 = 0xF6;
 pub const INC_ABS: u8 = 0xEE;
 pub const INC_ABX: u8 = 0xFE;
 
+// Increment Index by One
+pub const INX: u8 = 0xE8;   // INX - Increment Index X by One
+pub const INY: u8 = 0xC8;   // INY - Increment Index Y by One
+
 // DEC - Decrement Memory by One
 pub const DEC_ZPG: u8 = 0xC6;
 pub const DEC_ZPX: u8 = 0xD6;
 pub const DEC_ABS: u8 = 0xCE;
 pub const DEC_ABX: u8 = 0xDE;
+
+// Decrement Index by One
+pub const DEX: u8 = 0xCA;   // DEX - Decrement Index X by One
+pub const DEY: u8 = 0x88;   // DEY - Decrement Index Y by One
 
 // JMP - Jump to New Location
 pub const JMP_ABS: u8 = 0x4C;
@@ -83,28 +91,34 @@ impl Instruction {
             BIT_ZPG => Ok(Self { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Self { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
 
-            CLC => Ok(Self { opcode, mnemonic: "CLC", bytes: 1, cycles: 2 }),
-            CLD => Ok(Self { opcode, mnemonic: "CLS", bytes: 1, cycles: 2 }),
-            CLI => Ok(Self { opcode, mnemonic: "CLI", bytes: 1, cycles: 2 }),
-            CLV => Ok(Self { opcode, mnemonic: "CLV", bytes: 1, cycles: 2 }),
-            SEC => Ok(Self { opcode, mnemonic: "SEC", bytes: 1, cycles: 2 }),
-            SED => Ok(Self { opcode, mnemonic: "SED", bytes: 1, cycles: 2 }),
-            SEI => Ok(Self { opcode, mnemonic: "SEI", bytes: 1, cycles: 2 }),
+            CLC     => Ok(Self { opcode, mnemonic: "CLC", bytes: 1, cycles: 2 }),
+            CLD     => Ok(Self { opcode, mnemonic: "CLS", bytes: 1, cycles: 2 }),
+            CLI     => Ok(Self { opcode, mnemonic: "CLI", bytes: 1, cycles: 2 }),
+            CLV     => Ok(Self { opcode, mnemonic: "CLV", bytes: 1, cycles: 2 }),
+            SEC     => Ok(Self { opcode, mnemonic: "SEC", bytes: 1, cycles: 2 }),
+            SED     => Ok(Self { opcode, mnemonic: "SED", bytes: 1, cycles: 2 }),
+            SEI     => Ok(Self { opcode, mnemonic: "SEI", bytes: 1, cycles: 2 }),
 
             INC_ZPG => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 5 }),
             INC_ZPX => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 6 }),
             INC_ABS => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 6 }),
             INC_ABX => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 7 }),
 
+            INX     => Ok(Self { opcode, mnemonic: "INX", bytes: 1, cycles: 2 }),
+            INY     => Ok(Self { opcode, mnemonic: "INY", bytes: 1, cycles: 2 }),
+
             DEC_ZPG => Ok(Self { opcode, mnemonic: "DEC", bytes: 2, cycles: 5 }),
             DEC_ZPX => Ok(Self { opcode, mnemonic: "DEC", bytes: 2, cycles: 6 }),
             DEC_ABS => Ok(Self { opcode, mnemonic: "DEC", bytes: 3, cycles: 6 }),
             DEC_ABX => Ok(Self { opcode, mnemonic: "DEC", bytes: 3, cycles: 7 }),
 
+            DEX     => Ok(Self { opcode, mnemonic: "DEX", bytes: 1, cycles: 2 }),
+            DEY     => Ok(Self { opcode, mnemonic: "DEY", bytes: 1, cycles: 2 }),
+
             JMP_ABS => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),
 
-            NOP =>     Ok(Self { opcode, mnemonic: "NOP", bytes: 1, cycles: 2 }),
+            NOP     =>     Ok(Self { opcode, mnemonic: "NOP", bytes: 1, cycles: 2 }),
 
             _ => Err(()),
         }

@@ -187,7 +187,7 @@ impl Cpu {
                     BMI_REL => self.sr.contains(StatusFlags::N),
                     BVC_REL => !self.sr.contains(StatusFlags::V),
                     BVS_REL => self.sr.contains(StatusFlags::V),
-                    _ => panic!("Undefined branch opcode {:02X}", opcode),
+                    _ => panic!("Unhandled branch opcode {:02X}", opcode),
                 };
                 println!("rel: ${:02X} {}  jmp: {}", rel, rel, jmp);
                 if jmp {
@@ -204,7 +204,7 @@ impl Cpu {
                 match opcode {
                     INC_ZPG | INC_ZPX | DEC_ZPG | DEC_ZPX => addr = mem.read_u8(cur_addr) as u16 + if opcode == INC_ZPX { self.x } else { 0 } as u16,
                     INC_ABS | INC_ABX | DEC_ABS | DEC_ABX => addr = mem.read_u16(cur_addr) + if opcode == INC_ABX { self.x } else { 0 } as u16,
-                    _ => panic!("Undefined INC/DEC opcode {:02X}", opcode),
+                    _ => panic!("Unhandled INC/DEC opcode {:02X}", opcode),
                 }
                 let mut value: u8 = mem.read_u8(addr);
                 if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
@@ -212,6 +212,20 @@ impl Cpu {
                 self.sr.set(StatusFlags::Z, value == 0);
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
             },
+
+            INX | INY | DEX | DEY => {
+                let mut value: u8 = match opcode {
+                    INX | DEX => self.x,
+                    INY | DEY => self.y,
+                    _ => panic!("Undefined INC/DEC opcode {:02X}", opcode),
+                };
+                
+                if matches!(opcode, INX | INY) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
+                if matches!(opcode, INX | DEX) { self.x = value } else { self.y = value }
+
+                self.sr.set(StatusFlags::Z, value == 0);
+                self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
+            }
 
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
@@ -456,6 +470,38 @@ mod tests {
 
                 let result = mem.read_u8(addr);
                 assert_eq!(result, if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value.wrapping_add(1) } else { value.wrapping_sub(1) });
+                if result == 0 { assert!(cpu.sr.contains(StatusFlags::Z),) }
+                if result & 0b10000000 != 0 { assert!(cpu.sr.contains(StatusFlags::N)) }
+            }
+        }
+
+        for opcode in [INX, INY, DEX, DEY] {
+            for value in [0xFE, 0xFF] {
+                cpu.reset(&mut mem);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                
+                match opcode {
+                    INX | DEX => {
+                        cpu.x = value
+                    },
+                    INY | DEY => {
+                        cpu.y = value
+                    },
+                    _ => panic!("Unhandled test case INC/DEC {:02X}", opcode)
+                }
+                
+                cpu.exec(&mut mem, 1);
+
+                let result = match opcode {
+                    INX | DEX => {
+                        cpu.x
+                    },
+                    INY | DEY => {
+                        cpu.y
+                    },
+                    _ => panic!("Unhandled test case INC/DEC {:02X}", opcode)
+                };
+                assert_eq!(result, if matches!(opcode, INX | INY) { value.wrapping_add(1) } else { value.wrapping_sub(1) });
                 if result == 0 { assert!(cpu.sr.contains(StatusFlags::Z),) }
                 if result & 0b10000000 != 0 { assert!(cpu.sr.contains(StatusFlags::N)) }
             }
