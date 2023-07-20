@@ -7,13 +7,15 @@ pub const ADDR_RESET_VECTOR: u16 = 0xE000;
 
 
 pub struct Memory {
-    data: [u8; MEMORY_SIZE]
+    data: [u8; MEMORY_SIZE],
+    current_write_addr: Option<u16>,
 }
 
 impl Memory {
     pub fn create() -> Self {
         Self {
-            data: [0; MEMORY_SIZE]
+            data: [0; MEMORY_SIZE],
+            current_write_addr: None,       // comfort feature for consecutive writes
         }
     }
 
@@ -22,6 +24,8 @@ impl Memory {
         self.data = [0; MEMORY_SIZE];
 
         self.write_u16(VECTOR_RES, ADDR_RESET_VECTOR);
+
+        self.current_write_addr = None;
     }
 
     pub fn demo(&mut self) {
@@ -78,17 +82,50 @@ impl Memory {
         ((self.data[(addr + 1) as usize] as u16) << 8) | (self.data[addr as usize] as u16)
     }
 
-    pub fn write_u8(&mut self, addr: u16, value: u8) {
-        self.data[addr as usize] = value;
+    pub fn write_u8<T: Into<Option<u16>>>(&mut self, addr: T, value: u8) {
+        let write_addr: u16;
+        match addr.into() {
+            Some(addr) => write_addr = addr,
+            None => {
+                match self.current_write_addr {
+                    Some(addr) => write_addr = addr,
+                    None => panic!("No address provided and no previous write has occurred."),
+                }
+            }
+        }
+        self.data[write_addr as usize] = value;
+        self.current_write_addr = Some(write_addr + 1);
     }
 
-    pub fn write_i8(&mut self, addr: u16, value: i8) {
-        self.data[addr as usize] = value as u8;
+    pub fn write_i8<T: Into<Option<u16>>>(&mut self, addr: T, value: i8) {
+        let write_addr: u16;
+        match addr.into() {
+            Some(addr) => write_addr = addr,
+            None => {
+                match self.current_write_addr {
+                    Some(addr) => write_addr = addr,
+                    None => panic!("No address provided and no previous write has occurred."),
+                }
+            }
+        }
+        self.data[write_addr as usize] = value as u8;
+        self.current_write_addr = Some(write_addr + 1);
     }
 
-    pub fn write_u16(&mut self, addr: u16, value: u16) {
-        self.data[addr as usize] = (value & 0x00FF) as u8;                // LB
-        self.data[(addr + 1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
+    pub fn write_u16<T: Into<Option<u16>>>(&mut self, addr: T, value: u16) {
+        let write_addr: u16;
+        match addr.into() {
+            Some(addr) => write_addr = addr,
+            None => {
+                match self.current_write_addr {
+                    Some(addr) => write_addr = addr,
+                    None => panic!("No address provided and no previous write has occurred."),
+                }
+            }
+        }
+        self.data[write_addr as usize] = (value & 0x00FF) as u8;                // LB
+        self.data[(write_addr + 1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
+        self.current_write_addr = Some(write_addr + 2);
     }
 
     pub fn dump(&self, addr: u16, bytes: u16) {
@@ -163,30 +200,45 @@ mod tests {
     fn write_u8() {
         let mut mem = setup();
         let addr: u16 = 0x0F00;
-        let value: u8 = 0xFE;
-        mem.write_u8(addr, value);
-        assert_eq!(mem.data[addr as usize], value);
+        let value1: u8 = 0xFE;
+        let value2: u8 = 0xAA;
+        mem.write_u8(addr, value1);
+        assert_eq!(mem.data[addr as usize], value1);
+
+        // consecutive test
+        mem.write_u8(None, value2);
+        assert_eq!(mem.read_u8(addr + 1), value2);
     }
 
     #[test]
     fn write_i8() {
         let mut mem = setup();
         let addr: u16 = 0x0F00;
-        let value: i8 = -120;
-        mem.write_i8(addr, value);
-        assert_eq!(mem.data[addr as usize], value as u8);
-        assert_eq!(mem.read_i8(addr), value);
+        let value1: i8 = -120;
+        let value2: i8 = 33;
+        mem.write_i8(addr, value1);
+        assert_eq!(mem.data[addr as usize], value1 as u8);
+        assert_eq!(mem.read_i8(addr), value1);      // also via read method
+
+        // consecutive test
+        mem.write_i8(None, value2);
+        assert_eq!(mem.read_i8(addr + 1), value2);
     }
 
     #[test]
     fn write_u16() {
         let mut mem = setup();
         let addr: u16 = 0x0F00;
-        let value: u16 = 0xBEEF;
+        let value1: u16 = 0xBEEF;
         let lb: u8 = 0xEF;  // (value & 0x00FF) as u8;
         let hb: u8 = 0xBE;  // ((value & 0xFF00) >> 8) as u8;
-        mem.write_u16(addr, value);
+        let value2: u16 = 0xCAFE;
+        mem.write_u16(addr, value1);
         assert_eq!(mem.data[(addr + 0) as usize], lb);
         assert_eq!(mem.data[(addr + 1) as usize], hb);
+
+        // consecutive test
+        mem.write_u16(None, value2);
+        assert_eq!(mem.read_u16(addr + 2), value2);
     }
 }

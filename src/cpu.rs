@@ -281,16 +281,16 @@ mod tests {
 
         // JMP ABS
         cpu.reset(&mut mem);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, JMP_ABS);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, target_addr);
+        mem.write_u8(ADDR_RESET_VECTOR, JMP_ABS);
+        mem.write_u16(None, target_addr);
         cpu.exec(&mut mem, 1);
         assert_eq!(cpu.pc, target_addr);
 
         // JMP IND
         cpu.reset(&mut mem);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, JMP_IND);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, target_addr);
         mem.write_u16(target_addr, target_addr_ind);
+        mem.write_u8(ADDR_RESET_VECTOR, JMP_IND);
+        mem.write_u16(None, target_addr);
         cpu.exec(&mut mem, 1);
         assert_eq!(cpu.pc, target_addr_ind);
     }
@@ -315,11 +315,11 @@ mod tests {
         cpu.reset(mem);
         cpu.ac = ac;
         mem.write_u8(addr, value);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, opcode);
+        mem.write_u8(ADDR_RESET_VECTOR, opcode);
         if opcode == BIT_ZPG {
-            mem.write_u8(ADDR_RESET_VECTOR + 1, (addr & 0xFF) as u8);
+            mem.write_u8(None, (addr & 0xFF) as u8);
         } else {
-            mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+            mem.write_u16(None, addr);
         }
         cpu.exec(mem, 1);
         assert_eq!(cpu.sr, sr_expect);
@@ -365,8 +365,8 @@ mod tests {
 
         cpu.reset(mem);
         cpu.sr.insert(srf);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, opcode);
-        mem.write_i8(ADDR_RESET_VECTOR + 1, rel);
+        mem.write_u8(ADDR_RESET_VECTOR, opcode);
+        mem.write_i8(None, rel);
         cpu.exec(mem, 1);
         assert_eq!(cpu.pc, if jmp { addr_branch } else {addr_nobranch});
 
