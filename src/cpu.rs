@@ -6,6 +6,7 @@ use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xFFFC;
 pub const INITIAL_STACK_POINTER: u8 = 0xFF;        // [0x0100 - 0x01FF] in memory
+pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
 bitflags! {
     #[derive(PartialEq, Debug)]
@@ -86,7 +87,7 @@ impl Cpu {
         self.sp = INITIAL_STACK_POINTER;
 
         // [debug]
-        self.cycles = 0;
+        self.cycles = CYCLES_AFTER_RESET;
     }
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u16) {
@@ -294,7 +295,7 @@ mod tests {
         assert_eq!(cpu.sp, INITIAL_STACK_POINTER);
         assert_eq!(cpu.pc, ADDR_RESET_VECTOR);      // ensures working memory as well
 
-        assert_eq!(cpu.cycles, 0);
+        assert_eq!(cpu.cycles, CYCLES_AFTER_RESET);
     }
 
     #[test]
@@ -309,7 +310,7 @@ mod tests {
         assert_eq!(cpu.pc, pc_orig + 1);
 
         // verify 2 cycles happened
-        assert_eq!(cpu.cycles, Instruction::from_opcode(NOP).unwrap().cycles as u64);
+        assert_eq!(cpu.cycles, CYCLES_AFTER_RESET + Instruction::from_opcode(NOP).unwrap().cycles as u64);
     }
 
     #[test]
@@ -422,6 +423,8 @@ mod tests {
                 cpu.sr.insert(srf);
                 mem.write_u8(ADDR_RESET_VECTOR, opcode);
                 mem.write_i8(None, rel);
+
+                let cycles_orig = cpu.cycles;
                 cpu.exec(&mut mem, 1);
 
                 assert_eq!(cpu.pc, if jmp { addr_branch } else { addr_nobranch });
@@ -431,7 +434,7 @@ mod tests {
                     // jump occured: same page -> +1, page crossed -> +2
                     expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };
                 }
-                assert_eq!(cpu.cycles, expected_cycles);
+                assert_eq!(cpu.cycles - cycles_orig, expected_cycles);
             }
         }
     }
