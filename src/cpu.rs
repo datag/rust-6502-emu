@@ -5,7 +5,7 @@ use crate::instruction::*;
 use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xFFFC;
-pub const INITIAL_STACK_POINTER: u8 = 0xFF;        // [0x0100 - 0x01FF] in memory
+pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in memory; CPU starts with SP=0 and decrements 3x which is 0xFD
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
 bitflags! {
