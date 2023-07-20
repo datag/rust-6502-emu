@@ -24,6 +24,12 @@ bitflags! {
     }
 }
 
+impl Default for StatusFlags {
+    fn default() -> StatusFlags {
+        StatusFlags::RESERVED          // the reserved bit reads always as 1
+    }
+}
+
 pub struct Cpu {
     pub pc: u16,
     pub ac: u8,
@@ -71,7 +77,7 @@ impl Cpu {
         self.y = 0;
 
         // only the reserved bit 5 is set; the flag B is 0 and the others may be uninitialized (?)
-        self.sr = StatusFlags::RESERVED;
+        self.sr = StatusFlags::default();
 
         // load address from reset vector $FFFC and store it into PC
         self.pc = mem.read_u16(VECTOR_RES);
