@@ -24,6 +24,12 @@ pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
 pub const BIT_ZPG: u8 = 0x24;
 pub const BIT_ABS: u8 = 0x2C;
 
+// INC - Increment Memory by One
+pub const INC_ZPG: u8 = 0xE6;
+pub const INC_ZPX: u8 = 0xF6;
+pub const INC_ABS: u8 = 0xEE;
+pub const INC_ABX: u8 = 0xFE;
+
 // JMP - Jump to New Location
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
@@ -61,6 +67,11 @@ impl Instruction {
 
             BIT_ZPG => Ok(Self { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Self { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
+
+            INC_ZPG => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 5 }),
+            INC_ZPX => Ok(Self { opcode, mnemonic: "INC", bytes: 2, cycles: 6 }),
+            INC_ABS => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 6 }),
+            INC_ABX => Ok(Self { opcode, mnemonic: "INC", bytes: 3, cycles: 7 }),
 
             JMP_ABS => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: "JMP", bytes: 3, cycles: 5 }),

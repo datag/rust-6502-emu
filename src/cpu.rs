@@ -132,6 +132,8 @@ impl Cpu {
             NOP => println!("NOP"),
 
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
+                // FIXME: incomplete
+                // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
                 let value = mem.read_u8(cur_addr);
                 println!("value: ${:02X}", value);
 
@@ -154,16 +156,16 @@ impl Cpu {
 
             BIT_ZPG | BIT_ABS => {
                 let addr: u16;
-                if opcode == BIT_ABS {
-                    addr = mem.read_u16(cur_addr);
-                } else {
-                    addr = mem.read_u8(cur_addr) as u16;
+                match opcode {
+                    BIT_ABS => addr = mem.read_u16(cur_addr),
+                    BIT_ZPG => addr = mem.read_u8(cur_addr) as u16,
+                    _ => panic!("Unhandled BIT opcode {:02X}", opcode),
                 }
                 let value = mem.read_u8(addr);
                 println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
-                self.sr.set(StatusFlags::N, (value & StatusFlags::N.bits()) != 0);    // transfer bit 7 of operand to N
-                self.sr.set(StatusFlags::V, (value & StatusFlags::V.bits()) != 0);    // transfer bit 6 of operand to V
-                self.sr.set(StatusFlags::Z, (value & self.ac) == 0);                  // result of operand and AC
+                self.sr.set(StatusFlags::N, value & StatusFlags::N.bits() != 0);    // transfer bit 7 of operand to N
+                self.sr.set(StatusFlags::V, value & StatusFlags::V.bits() != 0);    // transfer bit 6 of operand to V
+                self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
             },
 
             BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
@@ -187,6 +189,20 @@ impl Cpu {
                     self.pc = self.pc.wrapping_add(rel as u16);     // add/sub relative address
                 }
             }
+
+            INC_ZPG | INC_ZPX | INC_ABS | INC_ABX => {
+                // TODO: possible page crossing additional cycle for ZPX and ABX?
+                let addr: u16;
+                match opcode {
+                    INC_ZPG | INC_ZPX => addr = mem.read_u8(cur_addr) as u16 + if opcode == INC_ZPX { self.x } else { 0 } as u16,
+                    INC_ABS | INC_ABX => addr = mem.read_u16(cur_addr) + if opcode == INC_ABX { self.x } else { 0 } as u16,
+                    _ => panic!("Undefined INC opcode {:02X}", opcode),
+                }
+                let value = mem.read_u8(addr).wrapping_add(1);
+                mem.write_u8(addr, value);
+                self.sr.set(StatusFlags::Z, value == 0);
+                self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
+            },
 
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
@@ -376,5 +392,45 @@ mod tests {
             expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };
         }
         assert_eq!(cpu.cycles, expected_cycles);
+    }
+
+    #[test]
+    fn ins_inc() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [INC_ZPG, INC_ZPX | INC_ABS | INC_ABX] {
+            for value in [0xFE, 0xFF] {
+                let rel_addr: u8 = 0xAA;
+                let abs_addr: u16 = 0xCAFE;
+
+                cpu.reset(&mut mem);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+
+                let mut addr: u16;
+                match opcode {
+                    INC_ZPG | INC_ZPX => {
+                        addr = rel_addr as u16;
+                        mem.write_u8(None, rel_addr);
+                    },
+                    INC_ABS | INC_ABX => {
+                        addr = abs_addr;
+                        mem.write_u16(None, abs_addr);
+                    },
+                    _ => panic!("Unhandled test case INC {:02X}", opcode)
+                }
+                
+                if matches!(opcode, INC_ZPX | INC_ABX) {
+                    cpu.x = 1;
+                    addr = addr.wrapping_add(cpu.x as u16);
+                }
+                mem.write_u8(addr, value);      // memory location that gets incremented
+                cpu.exec(&mut mem, 1);
+
+                let result = mem.read_u8(addr);
+                assert_eq!(result, value.wrapping_add(1));
+                if result == 0 { assert!(cpu.sr.contains(StatusFlags::Z),) }
+                if result & 0b10000000 != 0 { assert!(cpu.sr.contains(StatusFlags::N)) }
+            }
+        }
     }
 }
