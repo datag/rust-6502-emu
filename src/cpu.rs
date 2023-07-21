@@ -9,7 +9,7 @@ pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in 
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
 bitflags! {
-    #[derive(PartialEq, Debug)]
+    #[derive(Clone, Copy, PartialEq, Debug)]
     pub struct StatusFlags: u8 {
         const C = 0b00000001;          // [0] Carry Flag
         const Z = 0b00000010;          // [1] Zero Flag
@@ -429,7 +429,7 @@ mod tests {
 
                 assert_eq!(cpu.pc, if jmp { addr_branch } else { addr_nobranch });
         
-                let mut expected_cycles = 2;
+                let mut expected_cycles = Instruction::from_opcode(opcode).unwrap().cycles as u64;
                 if jmp {
                     // jump occured: same page -> +1, page crossed -> +2
                     expected_cycles += if Cpu::is_page_crossed(ADDR_RESET_VECTOR + 2, rel) { 2 } else { 1 };

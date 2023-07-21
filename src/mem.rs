@@ -1,5 +1,5 @@
 
-use crate::cpu::VECTOR_RES;
+use crate::cpu;
 
 const MEMORY_SIZE: usize = 0xFFFF;
 
@@ -23,7 +23,7 @@ impl Memory {
         // initialize with zero
         self.data = [0; MEMORY_SIZE];
 
-        self.write_u16(VECTOR_RES, ADDR_RESET_VECTOR);
+        self.write_u16(cpu::VECTOR_RES, ADDR_RESET_VECTOR);
 
         self.current_write_addr = None;
     }
@@ -156,14 +156,14 @@ mod tests {
         let mem = setup();
 
         // all zero excluding VECTOR_RES (2 bytes)
-        assert_eq!(has_nonzero_value(&mem.data[1..VECTOR_RES as usize]), false);
-        assert_eq!(has_nonzero_value(&mem.data[(VECTOR_RES as usize)+2..]), false);
+        assert_eq!(has_nonzero_value(&mem.data[1..cpu::VECTOR_RES as usize]), false);
+        assert_eq!(has_nonzero_value(&mem.data[(cpu::VECTOR_RES as usize)+2..]), false);
     }
 
     #[test]
     fn addr_reset_vector_correct() {
         let mem = setup();
-        assert_eq!(mem.read_u16(VECTOR_RES), ADDR_RESET_VECTOR);
+        assert_eq!(mem.read_u16(cpu::VECTOR_RES), ADDR_RESET_VECTOR);
     }
 
     #[test]

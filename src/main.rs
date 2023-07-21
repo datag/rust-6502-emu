@@ -2,8 +2,8 @@ pub mod cpu;
 pub mod instruction;
 pub mod mem;
 
-use crate::cpu::{Cpu, VECTOR_RES, StatusFlags};
-use crate::mem::{Memory, ADDR_RESET_VECTOR};
+use crate::cpu::{Cpu, StatusFlags};
+use crate::mem::Memory;
 
 fn main() {
     println!("rust-6502-emu");
@@ -12,9 +12,9 @@ fn main() {
     mem.reset();
 
     print!("Reset vector: ");
-    mem.dump(VECTOR_RES, 2);
+    mem.dump(cpu::VECTOR_RES, 2);
     print!("Data at reset vector address: ");
-    mem.dump(ADDR_RESET_VECTOR, 16);
+    mem.dump(mem::ADDR_RESET_VECTOR, 16);
 
     let mut cpu = Cpu::create();
     cpu.reset(&mut mem);
