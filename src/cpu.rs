@@ -60,11 +60,16 @@ impl Cpu {
     }
 
     fn is_page_crossed(cur_addr: u16, rel: i8) -> bool {
+        let target_addr = cur_addr.wrapping_add(rel as u16);
+        Self::is_page_different(cur_addr, target_addr)
+    }
+
+    fn is_page_different(cur_addr: u16, target_addr: u16) -> bool {
         // divide current address by 256 (0x100) to get the current page
         let current_page = cur_addr >> 8;
 
         // calculate the target page
-        let target_page = (cur_addr.wrapping_add(rel as u16)) >> 8;
+        let target_page = target_addr >> 8;
 
         current_page != target_page
     }
@@ -125,44 +130,68 @@ impl Cpu {
         }
     }
 
-    fn addr_zpg(&mut self, addr: u8) -> u16 {
+    fn addr_zpg(&self, addr: u8) -> u16 {
         0x0000 | (addr as u16)
     }
 
-    fn fetch_addr_zpg(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn fetch_addr_zpg(&self, mem: &Memory, addr: u16) -> u16 {
         self.addr_zpg(mem.read_u8(addr))
     }
 
-    fn addr_zpx(&mut self, addr: u8) -> u16 {
+    fn addr_zpx(&self, addr: u8) -> u16 {
         0x0000 | (addr.wrapping_add(self.x) as u16)      // wrap around zero page  (= without carry)
     }
 
-    fn fetch_addr_zpx(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn fetch_addr_zpx(&self, mem: &Memory, addr: u16) -> u16 {
         self.addr_zpx(mem.read_u8(addr))
     }
 
-    fn addr_zpy(&mut self, addr: u8) -> u16 {
+    fn addr_zpy(&self, addr: u8) -> u16 {
         0x0000 | (addr.wrapping_add(self.y) as u16)      // wrap around zero page  (= without carry)
     }
 
-    fn fetch_addr_zpy(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn fetch_addr_zpy(&self, mem: &Memory, addr: u16) -> u16 {
         self.addr_zpy(mem.read_u8(addr))
     }
 
-    fn addr_abs(&mut self, addr: u16) -> u16 {
+    fn addr_abs(&self, addr: u16) -> u16 {
         addr
     }
 
-    fn fetch_addr_abs(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn fetch_addr_abs(&self, mem: &Memory, addr: u16) -> u16 {
         self.addr_abs(mem.read_u16(addr))
     }
 
-    fn addr_ind(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn addr_abx(&self, addr: u16) -> u16 {
+        addr.wrapping_add(self.x as u16)
+    }
+
+    fn fetch_addr_abx(&self, mem: &Memory, addr: u16) -> u16 {
+        self.addr_abx(mem.read_u16(addr))
+    }
+
+    fn addr_aby(&self, addr: u16) -> u16 {
+        addr.wrapping_add(self.y as u16)
+    }
+
+    fn fetch_addr_aby(&self, mem: &Memory, addr: u16) -> u16 {
+        self.addr_aby(mem.read_u16(addr))
+    }
+
+    fn addr_ind(&self, mem: &Memory, addr: u16) -> u16 {
         mem.read_u16(addr)
     }
 
-    fn fetch_addr_ind(&mut self, mem: &Memory, addr: u16) -> u16 {
+    fn fetch_addr_ind(&self, mem: &Memory, addr: u16) -> u16 {
         self.addr_ind(mem, mem.read_u16(addr))
+    }
+
+    fn addr_rel(&self, addr: u16, rel: i8) -> u16 {
+        self.pc.wrapping_add(rel as u16)     // add/sub relative address
+    }
+
+    fn fetch_addr_rel(&self, mem: &Memory, addr: u16) -> u16 {
+        self.addr_rel(addr, mem.read_i8(addr))
     }
 
     fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
@@ -181,11 +210,11 @@ impl Cpu {
                 } else {
                     let addr: u16;
                     match opcode {
-                        ADC_ZPG => addr = mem.read_u8(cur_addr) as u16,
-                        ADC_ZPX => addr = mem.read_u8(cur_addr) as u16 + self.x as u16,
-                        ADC_ABS => addr = mem.read_u16(cur_addr),
-                        ADC_ABX => addr = mem.read_u16(cur_addr) + self.x as u16,
-                        ADC_ABY => addr = mem.read_u16(cur_addr) + self.y as u16,
+                        ADC_ZPG => addr = self.fetch_addr_zpg(mem, cur_addr),
+                        ADC_ZPX => addr = self.fetch_addr_zpx(mem, cur_addr),
+                        ADC_ABS => addr = self.fetch_addr_abs(mem, cur_addr),
+                        ADC_ABX => addr = self.fetch_addr_abx(mem, cur_addr),
+                        ADC_ABY => addr = self.fetch_addr_aby(mem, cur_addr),
                         ADC_IDX | ADC_IDY => panic!("TODO: ADC IDX/IDY"),
                         _ => panic!("Unhandled ADC opcode {:02X}", opcode),
                     }
@@ -202,22 +231,15 @@ impl Cpu {
                 // TODO: SR flags
             }
 
-            JMP_ABS | JMP_IND => {
-                let mut addr = mem.read_u16(cur_addr);
-                if opcode == JMP_IND {
-                    addr = mem.read_u16(addr); // indirection: real target is at read addr
-                }
-                println!("addr: ${:04X}", addr);
-                self.pc = addr;
-            }
+            JMP_ABS => self.pc = self.fetch_addr_abs(mem, cur_addr),
+            JMP_IND => self.pc = self.fetch_addr_ind(mem, cur_addr),
 
             BIT_ZPG | BIT_ABS => {
-                let addr: u16;
-                match opcode {
-                    BIT_ABS => addr = mem.read_u16(cur_addr),
-                    BIT_ZPG => addr = mem.read_u8(cur_addr) as u16,
+                let addr = match opcode {
+                    BIT_ABS => self.fetch_addr_abs(mem, cur_addr),
+                    BIT_ZPG => self.fetch_addr_zpg(mem, cur_addr),
                     _ => panic!("Unhandled BIT opcode {:02X}", opcode),
-                }
+                };
                 let value = mem.read_u8(addr);
                 println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
                 self.sr.set(StatusFlags::N, value & StatusFlags::N.bits() != 0);    // transfer bit 7 of operand to N
@@ -234,7 +256,6 @@ impl Cpu {
             SEI => self.sr.insert(StatusFlags::I),
 
             BCC_REL | BCS_REL | BEQ_REL | BNE_REL | BPL_REL | BMI_REL | BVC_REL | BVS_REL => {
-                let rel = mem.read_i8(cur_addr);
                 let jmp = match opcode {
                     BCC_REL => !self.sr.contains(StatusFlags::C),
                     BCS_REL => self.sr.contains(StatusFlags::C),
@@ -246,12 +267,13 @@ impl Cpu {
                     BVS_REL => self.sr.contains(StatusFlags::V),
                     _ => panic!("Unhandled branch opcode {:02X}", opcode),
                 };
-                println!("rel: ${:02X} {}  jmp: {}", rel, rel, jmp);
+                println!("jmp: {}", jmp);
                 if jmp {
-                    // +1 if branch occurs on same page, +2 if on different page
-                    cycles_additional += if Self::is_page_crossed(self.pc, rel) { 2 } else { 1 };
+                    let addr = self.fetch_addr_rel(mem, cur_addr);
 
-                    self.pc = self.pc.wrapping_add(rel as u16);     // add/sub relative address
+                    // +1 if branch occurs on same page, +2 if on different page
+                    cycles_additional += if Self::is_page_different(self.pc, addr) { 2 } else { 1 };
+                    self.pc = addr;
                 }
             }
 
@@ -259,8 +281,10 @@ impl Cpu {
                 // TODO: possible page crossing additional cycle for ZPX and ABX?
                 let addr: u16;
                 match opcode {
-                    INC_ZPG | INC_ZPX | DEC_ZPG | DEC_ZPX => addr = mem.read_u8(cur_addr) as u16 + if opcode == INC_ZPX { self.x } else { 0 } as u16,
-                    INC_ABS | INC_ABX | DEC_ABS | DEC_ABX => addr = mem.read_u16(cur_addr) + if opcode == INC_ABX { self.x } else { 0 } as u16,
+                    INC_ZPG | DEC_ZPG => addr = self.fetch_addr_zpg(mem, cur_addr),
+                    INC_ZPX | DEC_ZPX => addr = self.fetch_addr_zpx(mem, cur_addr),
+                    INC_ABS | DEC_ABS => addr = self.fetch_addr_abs(mem, cur_addr),
+                    INC_ABX | DEC_ABX => addr = self.fetch_addr_abx(mem, cur_addr),
                     _ => panic!("Unhandled INC/DEC opcode {:02X}", opcode),
                 }
                 let mut value: u8 = mem.read_u8(addr);
@@ -355,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn fetch_addr_zero_page() {
+    fn fetch_addr_zpx() {
         let (mut cpu, mut mem) = setup();
 
         let addr: u8 = 0xF0;
@@ -372,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    fn fetch_addr_zero_page_xy() {
+    fn fetch_addr_pgxy() {
         let (mut cpu, mut mem) = setup();
 
         let addr: u8 = 0x80;
@@ -405,13 +429,45 @@ mod tests {
         let (mut cpu, mut mem) = setup();
 
         let addr: u16 = 0xA000;
-        let addr_expected: u16 = addr as u16;
+        let addr_expected: u16 = addr;
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
         mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
         mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
 
         let addr_effective = cpu.fetch_addr_abs(&mem, ADDR_RESET_VECTOR + 1);
+        println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
+        assert_eq!(addr_effective, addr_expected);
+        assert_eq!(mem.read_u8(addr_effective), data);
+    }
+
+    #[test]
+    fn fetch_addr_abxy() {
+        let (mut cpu, mut mem) = setup();
+
+        let addr: u16 = 0xA000;
+        let data: u8 = 0xAA;
+
+        cpu.reset(&mut mem);
+        cpu.x = 0x0F;
+        let addr_expected: u16 = addr.wrapping_add(cpu.x as u16);
+        mem.write_u8(addr_expected, data);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
+        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+
+        let addr_effective = cpu.fetch_addr_abx(&mem, ADDR_RESET_VECTOR + 1);
+        println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
+        assert_eq!(addr_effective, addr_expected);
+        assert_eq!(mem.read_u8(addr_effective), data);
+
+        cpu.reset(&mut mem);
+        cpu.y = 0x0F;
+        let addr_expected: u16 = addr.wrapping_add(cpu.y as u16);
+        mem.write_u8(addr_expected, data);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
+        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+
+        let addr_effective = cpu.fetch_addr_aby(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
         assert_eq!(addr_effective, addr_expected);
         assert_eq!(mem.read_u8(addr_effective), data);
@@ -430,6 +486,23 @@ mod tests {
         mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
 
         let addr_effective = cpu.fetch_addr_ind(&mem, ADDR_RESET_VECTOR + 1);
+        println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
+        assert_eq!(addr_effective, addr_expected);
+        assert_eq!(mem.read_u8(addr_effective), data);
+    }
+
+    #[test]
+    fn fetch_addr_rel() {
+        let (mut cpu, mut mem) = setup();
+
+        let addr: i8 = -10;
+        let addr_expected: u16 = cpu.pc.wrapping_add(addr as u16);
+        let data: u8 = 0xAA;
+        mem.write_u8(addr_expected, data);
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
+        mem.write_i8(ADDR_RESET_VECTOR + 1, addr);
+
+        let addr_effective = cpu.fetch_addr_rel(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
         assert_eq!(addr_effective, addr_expected);
         assert_eq!(mem.read_u8(addr_effective), data);
