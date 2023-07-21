@@ -59,6 +59,7 @@ impl Cpu {
         }
     }
 
+    #[allow(dead_code)]
     fn is_page_crossed(cur_addr: u16, rel: i8) -> bool {
         let target_addr = cur_addr.wrapping_add(rel as u16);
         Self::is_page_different(cur_addr, target_addr)
@@ -139,7 +140,7 @@ impl Cpu {
     }
 
     fn addr_zpx(&self, addr: u8) -> u16 {
-        0x0000 | (addr.wrapping_add(self.x) as u16)      // wrap around zero page  (= without carry)
+        addr.wrapping_add(self.x) as u16      // wrap around zero page  (= without carry)
     }
 
     fn fetch_addr_zpx(&self, mem: &Memory, addr: u16) -> u16 {
@@ -147,7 +148,7 @@ impl Cpu {
     }
 
     fn addr_zpy(&self, addr: u8) -> u16 {
-        0x0000 | (addr.wrapping_add(self.y) as u16)      // wrap around zero page  (= without carry)
+        addr.wrapping_add(self.y) as u16      // wrap around zero page  (= without carry)
     }
 
     fn fetch_addr_zpy(&self, mem: &Memory, addr: u16) -> u16 {
@@ -186,12 +187,28 @@ impl Cpu {
         self.addr_ind(mem, mem.read_u16(addr))
     }
 
-    fn addr_rel(&self, addr: u16, rel: i8) -> u16 {
+    fn addr_idx(&self, mem: &Memory, addr: u8) -> u16 {
+        mem.read_u16(addr.wrapping_add(self.x) as u16)
+    }
+
+    fn fetch_addr_idx(&self, mem: &Memory, addr: u16) -> u16 {
+        self.addr_idx(mem, mem.read_u8(addr))
+    }
+
+    fn addr_idy(&self, mem: &Memory, addr: u8) -> u16 {
+        mem.read_u16(addr as u16).wrapping_add(self.y as u16)
+    }
+
+    fn fetch_addr_idy(&self, mem: &Memory, addr: u16) -> u16 {
+        self.addr_idy(mem, mem.read_u8(addr))
+    }
+
+    fn addr_rel(&self, rel: i8) -> u16 {
         self.pc.wrapping_add(rel as u16)     // add/sub relative address
     }
 
     fn fetch_addr_rel(&self, mem: &Memory, addr: u16) -> u16 {
-        self.addr_rel(addr, mem.read_i8(addr))
+        self.addr_rel(mem.read_i8(addr))
     }
 
     fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
@@ -215,7 +232,8 @@ impl Cpu {
                         ADC_ABS => addr = self.fetch_addr_abs(mem, cur_addr),
                         ADC_ABX => addr = self.fetch_addr_abx(mem, cur_addr),
                         ADC_ABY => addr = self.fetch_addr_aby(mem, cur_addr),
-                        ADC_IDX | ADC_IDY => panic!("TODO: ADC IDX/IDY"),
+                        ADC_IDX => addr = self.fetch_addr_idx(mem, cur_addr),
+                        ADC_IDY => addr = self.fetch_addr_idy(mem, cur_addr),
                         _ => panic!("Unhandled ADC opcode {:02X}", opcode),
                     }
                     print!("effective addr: {:04}", addr);
@@ -380,7 +398,7 @@ mod tests {
 
     #[test]
     fn fetch_addr_zpx() {
-        let (mut cpu, mut mem) = setup();
+        let (cpu, mut mem) = setup();
 
         let addr: u8 = 0xF0;
         let addr_expected: u16 = addr as u16;
@@ -426,7 +444,7 @@ mod tests {
 
     #[test]
     fn fetch_addr_abs() {
-        let (mut cpu, mut mem) = setup();
+        let (cpu, mut mem) = setup();
 
         let addr: u16 = 0xA000;
         let addr_expected: u16 = addr;
@@ -475,7 +493,7 @@ mod tests {
 
     #[test]
     fn fetch_addr_ind() {
-        let (mut cpu, mut mem) = setup();
+        let (cpu, mut mem) = setup();
 
         let addr: u16 = 0xA000;
         let addr_expected: u16 = 0x0B00;
@@ -492,8 +510,42 @@ mod tests {
     }
 
     #[test]
-    fn fetch_addr_rel() {
+    fn fetch_addr_idxy() {
         let (mut cpu, mut mem) = setup();
+
+        let addr: u8 = 0xF0;
+        let data: u8 = 0xAA;
+
+        cpu.reset(&mut mem);
+        let addr_expected: u16 = 0x0B00;
+        cpu.x = 3;
+        mem.write_u16(addr.wrapping_add(cpu.x) as u16, addr_expected);     // address holds indirect address
+        mem.write_u8(addr_expected, data);      // indirect address holds data
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+
+        let addr_effective = cpu.fetch_addr_idx(&mem, ADDR_RESET_VECTOR + 1);
+        println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
+        assert_eq!(addr_effective, addr_expected);
+        assert_eq!(mem.read_u8(addr_effective), data);
+
+        cpu.reset(&mut mem);
+        let addr_expected: u16 = 0x0B03;
+        cpu.y = 3;
+        mem.write_u16(addr as u16, addr_expected.wrapping_sub(cpu.y as u16));     // address holds indirect address
+        mem.write_u8(addr_expected, data);      // indirect address holds data
+        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+
+        let addr_effective = cpu.fetch_addr_idy(&mem, ADDR_RESET_VECTOR + 1);
+        println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
+        assert_eq!(addr_effective, addr_expected);
+        assert_eq!(mem.read_u8(addr_effective), data);
+    }
+
+    #[test]
+    fn fetch_addr_rel() {
+        let (cpu, mut mem) = setup();
 
         let addr: i8 = -10;
         let addr_expected: u16 = cpu.pc.wrapping_add(addr as u16);
