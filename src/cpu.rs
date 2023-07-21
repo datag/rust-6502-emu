@@ -223,34 +223,35 @@ impl Cpu {
             NOP => println!("NOP"),
 
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
-                // FIXME: incomplete
                 // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
                 let value: u8;
                 if opcode == ADC_IMM {
                     value = mem.read_u8(cur_addr);
                 } else {
-                    let addr: u16;
-                    match opcode {
-                        ADC_ZPG => addr = self.fetch_addr_zpg(mem, cur_addr),
-                        ADC_ZPX => addr = self.fetch_addr_zpx(mem, cur_addr),
-                        ADC_ABS => addr = self.fetch_addr_abs(mem, cur_addr),
-                        ADC_ABX => addr = self.fetch_addr_abx(mem, cur_addr),
-                        ADC_ABY => addr = self.fetch_addr_aby(mem, cur_addr),
-                        ADC_IDX => addr = self.fetch_addr_idx(mem, cur_addr),
-                        ADC_IDY => addr = self.fetch_addr_idy(mem, cur_addr),
+                    let addr = match opcode {
+                        ADC_ZPG => self.fetch_addr_zpg(mem, cur_addr),
+                        ADC_ZPX => self.fetch_addr_zpx(mem, cur_addr),
+                        ADC_ABS => self.fetch_addr_abs(mem, cur_addr),
+                        ADC_ABX => self.fetch_addr_abx(mem, cur_addr),
+                        ADC_ABY => self.fetch_addr_aby(mem, cur_addr),
+                        ADC_IDX => self.fetch_addr_idx(mem, cur_addr),
+                        ADC_IDY => self.fetch_addr_idy(mem, cur_addr),
                         _ => panic!("Unhandled ADC opcode {:02X}", opcode),
-                    }
-                    print!("effective addr: {:04}", addr);
-                    value = 0xAA;       // FIXME
+                    };
+                    value = mem.read_u8(addr);
                 }
-                println!("value: ${:02X}", value);
+                println!("oper: 0x{:02X}", value);
 
-                self.sr.set(StatusFlags::V, (self.ac as u16 + value as u16) > 0xFF);        // FIXME
-                self.ac = self.ac.wrapping_add(value);
+                let add_carry = if self.sr.contains(StatusFlags::C) { 1 } else { 0 };
+
+                self.ac = self.ac.wrapping_add(value).wrapping_add(add_carry);
                 println!("AC is now: 0x{:02X}", self.ac);
                 
+                // FIXME: incomplete
+                // TODO: C
                 self.sr.set(StatusFlags::Z, self.ac == 0);
-                // TODO: SR flags
+                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
+                // TODO: V
             }
 
             JMP_ABS => self.pc = self.fetch_addr_abs(mem, cur_addr),
