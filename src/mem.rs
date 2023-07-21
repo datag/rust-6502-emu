@@ -1,4 +1,7 @@
 
+use std::fs::File;
+use std::io::{BufReader, Read, Error};
+
 use crate::cpu;
 
 const MEMORY_SIZE: usize = 0xFFFF;
@@ -26,6 +29,29 @@ impl Memory {
         self.write_u16(cpu::VECTOR_RES, ADDR_RESET_VECTOR);
 
         self.current_write_addr = None;
+    }
+
+    pub fn load_from_file(&mut self, addr: u16, filename: &str) -> Result<(), Error>{
+        let file = File::open(filename)?;
+        let mut reader = BufReader::new(file);
+        
+        let mut buffer = [0u8; 1024];
+        let mut pos = 0;
+
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break, // EOF
+                Ok(bytes_read) => {
+                    for i in 0..bytes_read {
+                        self.write_u8(addr + pos, buffer[i]);
+                        pos += 1;
+                    }
+                }
+                Err(e) => return Err(e),
+            }
+        }
+
+        Ok(())
     }
 
     pub fn demo(&mut self) {

@@ -9,6 +9,14 @@ struct Cli {
     #[arg(default_value_t = 1)]
     cycles_to_execute: u64,
 
+    /// Load demo data
+    #[arg(short, long)]
+    demo: bool,
+
+    /// Load data from file
+    #[arg(short, long)]
+    file: Option<String>,
+
     /// Verbosity; can be specified multiple times
     #[arg(short, long, action = clap::ArgAction::Count, default_value_t = 0)]
     verbose: u8,
@@ -26,6 +34,8 @@ fn main() {
 
     let config = Config {
         cycles_to_execute: args.cycles_to_execute,
+        load_demo: args.demo,
+        load_file: args.file,
         verbosity,
     };
 

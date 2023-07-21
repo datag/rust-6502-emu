@@ -18,6 +18,8 @@ pub enum Verbosity {
 pub struct Config {
     pub verbosity: Verbosity,
     pub cycles_to_execute: u64,
+    pub load_demo: bool,
+    pub load_file: Option<String>,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -27,24 +29,30 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     }
 
     let mut mem = Memory::create();
-    mem.reset();
-
-    if config.verbosity >= Verbosity::Verbose {
-        print!("Reset vector: ");
-        mem.dump(cpu::VECTOR_RES, 2);
-        print!("Data at reset vector address: ");
-        mem.dump(mem::ADDR_RESET_VECTOR, 16);
-    }
-
     let mut cpu = Cpu::create();
     cpu.reset(&mut mem);
 
+    if let Some(filename) = config.load_file {
+        if let Err(error) = mem.load_from_file(mem::ADDR_RESET_VECTOR, &filename) {
+            panic!("Error reading file into memory: {error}");
+        }
+    }
+
+    if config.load_demo {
+        mem.demo();
+    }
+
     if config.verbosity >= Verbosity::Verbose {
+        print!("Reset vector: ");
+        
+        mem.dump(cpu::VECTOR_RES, 2);
+        print!("Data at reset vector address: ");
+        mem.dump(mem::ADDR_RESET_VECTOR, 16);
+
         println!("After reset: {:#?}", cpu);
     }
 
-    // demo data
-    mem.demo();
+
 
     cpu.exec(&mut mem, config.cycles_to_execute);
     if config.verbosity >= Verbosity::Verbose {

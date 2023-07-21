@@ -22,7 +22,7 @@
 
 ## TODO
 
-* lib/cli
+* logging
 * map ROM
 * method doc
 * refactor: set ZN flags for value
