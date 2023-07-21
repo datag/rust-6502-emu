@@ -9,47 +9,21 @@ pub mod mem;
 
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 #[allow(unused)]
-enum Verbosity {
-    Quiet = 0,
-    Normal = 1,
-    Verbose = 2,
-    VeryVerbose = 3,
+pub enum Verbosity {
+    Normal = 0,
+    Verbose = 1,
+    VeryVerbose = 2,
 }
 
 pub struct Config {
-    verbosity: Verbosity,
-    cycles_to_execute: u64,
-}
-
-impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str> {
-        let mut cycles_to_execute = 1;
-
-        if args.len() > 1 {
-            cycles_to_execute = args[1].parse::<u64>().unwrap();
-        }
-
-        let verbosity: Verbosity;
-        if args.contains(&String::from("-q")) {
-            verbosity = Verbosity::Quiet;
-        } else if args.contains(&String::from("-vv")) {
-            verbosity = Verbosity::VeryVerbose;
-        } else if args.contains(&String::from("-v")) {
-            verbosity = Verbosity::Verbose;
-        } else {
-            verbosity = Verbosity::Normal;
-        }
-
-        Ok(Config { verbosity, cycles_to_execute })
-    }
+    pub verbosity: Verbosity,
+    pub cycles_to_execute: u64,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    if config.verbosity != Verbosity::Quiet {
-        println!("rust-6502-emu");
-        if config.verbosity > Verbosity::Normal {
-            println!("Being verbose... {:?} [{}]", config.verbosity, config.verbosity as u8);
-        }
+    println!("rust-6502-emu");
+    if config.verbosity > Verbosity::Normal {
+        println!("Being verbose... {:?} [{}]", config.verbosity, config.verbosity as u8);
     }
 
     let mut mem = Memory::create();

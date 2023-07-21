@@ -1,9 +1,11 @@
 [package]
 name = "rust-6502-emu"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+authors = ["Dominik Geyer <dominik.geyer@gmail.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bitflags = "2.3.3"   # https://crates.io/crates/bitflags
+bitflags = "2.3.3"                                               # https://crates.io/crates/bitflags
+clap = { version = "4.3.17", features = ["derive", "color"] }    # https://docs.rs/clap/latest/clap/
