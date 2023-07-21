@@ -90,7 +90,7 @@ impl Cpu {
         self.cycles = CYCLES_AFTER_RESET;
     }
 
-    pub fn exec(&mut self, mem: &mut Memory, max_cycles: u16) {
+    pub fn exec(&mut self, mem: &mut Memory, max_cycles: u64) {
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
         let mut cur_addr: u16;
@@ -115,7 +115,7 @@ impl Cpu {
                     let cycles_consumed = ins.cycles + cycles_additional;
         
                     // decrease remaining cycle counter 
-                    cycles_to_execute = cycles_to_execute.saturating_sub(cycles_consumed as u16);
+                    cycles_to_execute = cycles_to_execute.saturating_sub(cycles_consumed as u64);
 
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
