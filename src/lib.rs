@@ -52,8 +52,6 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         println!("After reset: {:#?}", cpu);
     }
 
-
-
     cpu.exec(&mut mem, config.cycles_to_execute);
     if config.verbosity >= Verbosity::Verbose {
         println!("After exec: {:#?}", cpu);

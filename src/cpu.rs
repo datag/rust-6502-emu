@@ -97,6 +97,8 @@ impl Cpu {
     }
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u64) {
+        println!("[before   ] {:?}", &self);
+
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
         let mut cur_addr: u16;
@@ -105,15 +107,15 @@ impl Cpu {
             // load instruction from mem at PC
             opcode = mem.read_u8(self.pc);
 
-            // advance PC by 1 read opcode byte
+            // advance read address by 1 read opcode byte
             cur_addr = self.pc + 1;
 
             let result = Instruction::from_opcode(opcode);
             match result {
                 Ok(ins) => {
-                    println!("@{:04X} {:?}", self.pc, ins);
+                    println!(">> @{:04X} {:?}", self.pc, ins);
             
-                    // advance PC
+                    // advance PC by instruction bytes
                     self.pc += ins.bytes as u16;
 
                     // handle the opcode
@@ -125,6 +127,8 @@ impl Cpu {
 
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
+
+                    println!("[after {}] {:?}", ins.mnemonic, self);
                 },
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
@@ -259,7 +263,7 @@ impl Cpu {
                     _ => panic!("Unhandled BIT opcode {:02X}", opcode),
                 };
                 let value = mem.read_u8(addr);
-                println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
+                // println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
                 self.sr.set(StatusFlags::N, value & StatusFlags::N.bits() != 0);    // transfer bit 7 of operand to N
                 self.sr.set(StatusFlags::V, value & StatusFlags::V.bits() != 0);    // transfer bit 6 of operand to V
                 self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
@@ -285,7 +289,7 @@ impl Cpu {
                     BVS_REL => self.sr.contains(StatusFlags::V),
                     _ => panic!("Unhandled branch opcode {:02X}", opcode),
                 };
-                println!("jmp: {}", jmp);
+                // println!("jmp: {}", jmp);
                 if jmp {
                     let addr = self.fetch_addr_rel(mem, cur_addr);
 
