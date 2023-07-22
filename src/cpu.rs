@@ -276,10 +276,10 @@ impl Cpu {
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X} @{:04X}", value, addr);
 
-                match ins.mnemonic {
-                    Mnemonic::AND => self.ac &= value,
-                    Mnemonic::EOR => self.ac ^= value,
-                    Mnemonic::ORA => self.ac |= value,
+                self.ac = match ins.mnemonic {
+                    Mnemonic::AND => self.ac & value,
+                    Mnemonic::EOR => self.ac ^ value,
+                    Mnemonic::ORA => self.ac | value,
                     _ => panic!("Unhandled mnemonic {:?}", ins.mnemonic),
                 };
 

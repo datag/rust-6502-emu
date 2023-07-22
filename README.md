@@ -22,7 +22,6 @@
 
 ## TODO
 
-* opcode list with addr mode
 * merge tests (e.g. AND + EOR + ORA)
 * logging
 * map ROM
