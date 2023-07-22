@@ -239,22 +239,37 @@ impl Cpu {
         match opcode {
             NOP => println!("NOP"),
 
-            ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
+            ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY
+            | SBC_IMM | SBC_ZPG | SBC_ZPX | SBC_ABS | SBC_ABX | SBC_ABY | SBC_IDX | SBC_IDY => {
                 // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
+
+                // TODO: BCD mode
+                if self.sr.contains(StatusFlags::D) {
+                    panic!("BCD mode not yet implemented");
+                }
+
                 let addr = self.fetch_addr(mem, ins, cur_addr);
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X}", value);
 
-                let sum = (self.ac as u16) + value as u16 + if self.sr.contains(StatusFlags::C) { 1 } else { 0 } as u16;
+                let result: u8;
+                if ins.mnemonic == Mnemonic::ADC {
+                    let sum = (self.ac as u16) + value as u16 + if self.sr.contains(StatusFlags::C) { 1 } else { 0 } as u16;
+                    result = (sum & 0xFF) as u8;
+                    
+                    self.sr.set(StatusFlags::C, sum > 255);
+                    self.sr.set(StatusFlags::V, (!(self.ac ^ value) & (self.ac ^ result) & 0x80) != 0);
+                } else {
+                    let difference = (self.ac as u16) - value as u16 - if self.sr.contains(StatusFlags::C) { 0 } else { 1 };
+                    result = (difference & 0xFF) as u8;
 
-                let result = (sum & 0xFF) as u8;
-                println!("AC is now: 0x{:02X}", self.ac);
-                
-                self.sr.set(StatusFlags::C, sum > 255);
-                self.sr.set(StatusFlags::Z, result == 0);
+                    self.sr.set(StatusFlags::C, difference < 256);      // acts as borrow flag
+                    self.sr.set(StatusFlags::V, ((self.ac ^ value) & (self.ac ^ result) & 0x80) != 0);
+                }
+                println!("AC is now: 0x{:02X}", result);
+
                 self.sr.set(StatusFlags::N, result & 0b10000000 != 0);
-                self.sr.set(StatusFlags::V, (!(self.ac ^ value) & (self.ac ^ result) & 0x80) != 0);
-
+                self.sr.set(StatusFlags::Z, result == 0);
                 self.ac = result;
             }
 
@@ -593,21 +608,28 @@ mod tests {
     }
 
     #[test]
-    fn ins_adc() {
+    fn ins_adcsbc() {
         let (mut cpu, mut mem) = setup();
 
-        for (ac, value, carry, value_expect, sr_expect) in [
-            (0x01, 0x01, false, 0x02, StatusFlags::RESERVED),
-            (0x7f, 0x01, false, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),
-            (0x7f, 0x00, true, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),      // test if carry is taken into account
-            (0xff, 0xff, false, 0xfe, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::C),
+        for (opcode, ac, value, carry, value_expect, sr_expect) in [
+            // ADC
+            (ADC_IMM, 0x01, 0x01, false, 0x02, StatusFlags::RESERVED),
+            (ADC_IMM, 0x7F, 0x01, false, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),
+            (ADC_IMM, 0x7F, 0x00, true,  0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),      // test if carry is taken into account
+            (ADC_IMM, 0xfF, 0xFF, false, 0xFE, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::C),
+
+            // SBC
+            (SBC_IMM, 0x02, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::C | StatusFlags::Z),
+            (SBC_IMM, 0x03, 0x01, false, 0x01, StatusFlags::RESERVED | StatusFlags::C),
+            (SBC_IMM, 0x03, 0x00, true,  0x03, StatusFlags::RESERVED | StatusFlags::C),                      // test if carry is taken into account
+            (SBC_IMM, 0xFF, 0x01, false, 0xFD, StatusFlags::RESERVED | StatusFlags::C | StatusFlags::N),
         ] {
             let addr: u16 = 0x000A;
             cpu.reset(&mut mem);
             cpu.ac = ac;
             cpu.sr.set(StatusFlags::C, carry);
             mem.write_u8(addr, value);
-            mem.write_u8(ADDR_RESET_VECTOR, ADC_IMM /* one addr mode should be fine */);
+            mem.write_u8(ADDR_RESET_VECTOR, opcode);
             mem.write_u8(None, value);
             cpu.exec(&mut mem, 1);
             assert_eq!(cpu.ac, value_expect);

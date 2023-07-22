@@ -11,6 +11,16 @@ pub const ADC_ABY: u8 = 0x79;
 pub const ADC_IDX: u8 = 0x61;
 pub const ADC_IDY: u8 = 0x71;
 
+// SBC - Subtract Memory from Accumulator with Borrow
+pub const SBC_IMM: u8 = 0xE9;
+pub const SBC_ZPG: u8 = 0xE5;
+pub const SBC_ZPX: u8 = 0xF5;
+pub const SBC_ABS: u8 = 0xED;
+pub const SBC_ABX: u8 = 0xFD;
+pub const SBC_ABY: u8 = 0xF9;
+pub const SBC_IDX: u8 = 0xE1;
+pub const SBC_IDY: u8 = 0xF1;
+
 // Branches
 pub const BCC_REL: u8 = 0x90;   // BCC - Branch on Carry Clear
 pub const BCS_REL: u8 = 0xB0;   // BCS - Branch on Carry Set
@@ -110,6 +120,15 @@ impl Instruction {
             ADC_ABY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
             ADC_IDX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IDX, bytes: 2, cycles: 6 }),
             ADC_IDY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            SBC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            SBC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            SBC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            SBC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            SBC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            SBC_ABY => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            SBC_IDX => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            SBC_IDY => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
             BCC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCC, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
             BCS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCS, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
