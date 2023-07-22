@@ -245,16 +245,17 @@ impl Cpu {
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X}", value);
 
-                let add_carry = if self.sr.contains(StatusFlags::C) { 1 } else { 0 };
+                let sum = (self.ac as u16) + value as u16 + if self.sr.contains(StatusFlags::C) { 1 } else { 0 } as u16;
 
-                self.ac = self.ac.wrapping_add(value).wrapping_add(add_carry);
+                let result = (sum & 0xFF) as u8;
                 println!("AC is now: 0x{:02X}", self.ac);
                 
-                // FIXME: incomplete
-                // TODO: C
-                self.sr.set(StatusFlags::Z, self.ac == 0);
-                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
-                // TODO: V
+                self.sr.set(StatusFlags::C, sum > 255);
+                self.sr.set(StatusFlags::Z, result == 0);
+                self.sr.set(StatusFlags::N, result & 0b10000000 != 0);
+                self.sr.set(StatusFlags::V, (!(self.ac ^ value) & (self.ac ^ result) & 0x80) != 0);
+
+                self.ac = result;
             }
 
             JMP_ABS | JMP_IND => self.pc = self.fetch_addr(mem, ins, cur_addr),
@@ -589,6 +590,29 @@ mod tests {
 
         // verify 2 cycles happened
         assert_eq!(cpu.cycles, CYCLES_AFTER_RESET + Instruction::from_opcode(NOP).unwrap().cycles as u64);
+    }
+
+    #[test]
+    fn ins_adc() {
+        let (mut cpu, mut mem) = setup();
+
+        for (ac, value, carry, value_expect, sr_expect) in [
+            (0x01, 0x01, false, 0x02, StatusFlags::RESERVED),
+            (0x7f, 0x01, false, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),
+            (0x7f, 0x00, true, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),      // test if carry is taken into account
+            (0xff, 0xff, false, 0xfe, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::C),
+        ] {
+            let addr: u16 = 0x000A;
+            cpu.reset(&mut mem);
+            cpu.ac = ac;
+            cpu.sr.set(StatusFlags::C, carry);
+            mem.write_u8(addr, value);
+            mem.write_u8(ADDR_RESET_VECTOR, ADC_IMM /* one addr mode should be fine */);
+            mem.write_u8(None, value);
+            cpu.exec(&mut mem, 1);
+            assert_eq!(cpu.ac, value_expect);
+            assert_eq!(cpu.sr, sr_expect);
+        }
     }
 
     #[test]
