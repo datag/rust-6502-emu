@@ -22,8 +22,10 @@
 
 ## TODO
 
+* opcode list with addr mode
+* merge tests (e.g. AND + EOR + ORA)
 * logging
 * map ROM
 * method doc
 * refactor: set ZN flags for value
-* factor address modes
+* address helper for tests

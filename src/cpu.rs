@@ -267,23 +267,32 @@ impl Cpu {
                 self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
             },
 
-            AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY => {
+            AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY
+            | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
+            | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
                 let addr = match opcode {
-                    AND_IMM => cur_addr,
-                    AND_ZPG => self.fetch_addr_zpg(mem, cur_addr),
-                    AND_ZPX => self.fetch_addr_zpx(mem, cur_addr),
-                    AND_ABS => self.fetch_addr_abs(mem, cur_addr),
-                    AND_ABX => self.fetch_addr_abx(mem, cur_addr),
-                    AND_ABY => self.fetch_addr_aby(mem, cur_addr),
-                    AND_IDX => self.fetch_addr_idx(mem, cur_addr),
-                    AND_IDY => self.fetch_addr_idy(mem, cur_addr),
-                    _ => panic!("Unhandled ADC opcode {:02X}", opcode),
+                    AND_IMM | EOR_IMM | ORA_IMM => cur_addr,
+                    AND_ZPG | EOR_ZPG | ORA_ZPG => self.fetch_addr_zpg(mem, cur_addr),
+                    AND_ZPX | EOR_ZPX | ORA_ZPX => self.fetch_addr_zpx(mem, cur_addr),
+                    AND_ABS | EOR_ABS | ORA_ABS => self.fetch_addr_abs(mem, cur_addr),
+                    AND_ABX | EOR_ABX | ORA_ABX => self.fetch_addr_abx(mem, cur_addr),
+                    AND_ABY | EOR_ABY | ORA_ABY => self.fetch_addr_aby(mem, cur_addr),
+                    AND_IDX | EOR_IDX | ORA_IDX => self.fetch_addr_idx(mem, cur_addr),
+                    AND_IDY | EOR_IDY | ORA_IDY => self.fetch_addr_idy(mem, cur_addr),
+                    _ => panic!("Unhandled logical operation opcode {:02X}", opcode),
                 };
             
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X} @{:04X}", value, addr);
 
-                self.ac &= value;
+                match opcode {
+                    AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY => self.ac &= value,
+                    EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY => self.ac ^= value,
+                    ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => self.ac |= value,
+                    _ => panic!("Unhandled logical operation opcode {:02X}", opcode),
+                }
+                
+
                 self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
                 self.sr.set(StatusFlags::Z, self.ac == 0);
             },
@@ -677,6 +686,88 @@ mod tests {
                 if opcode == AND_IMM {
                     mem.write_u8(None, value);
                 } else if matches!(opcode, AND_ZPG | AND_ZPX | AND_IDX | AND_IDY) {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.ac, ac_expect);
+                assert_eq!(cpu.sr, sr_expect);
+            }
+        }
+    }
+
+    #[test]
+    fn ins_ora() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [ORA_IMM, ORA_ZPG, ORA_ZPX, ORA_ABS, ORA_ABX, ORA_ABY, ORA_IDX, ORA_IDY] {
+            for (ac, value, ac_expect, sr_expect) in [
+                (0x00, 0x00, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, 0x00, 0x01, StatusFlags::RESERVED),
+                (0x00, 0x01, 0x01, StatusFlags::RESERVED),
+                (0x01, 0x01, 0x01, StatusFlags::RESERVED),
+                (0xF0, 0x0F, 0xFF, StatusFlags::RESERVED | StatusFlags::N),
+            ] {
+                cpu.reset(&mut mem);
+                cpu.ac = ac;
+
+                let addr: u16 = 0x000A;
+                println!("ac:{:02X} value:{:02X} ac_expect:{:?} sf_expect:{:?}", ac, value, ac_expect, sr_expect);
+                cpu.x = 0;
+                cpu.y = 0;
+                if matches!(opcode, ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY) {
+                    mem.write_u8(addr, value);
+                } else if matches!(opcode, ORA_IDX | ORA_IDY) {
+                    mem.write_u16(addr, addr + 2);
+                    mem.write_u8(addr + 2, value);
+                }
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                if opcode == ORA_IMM {
+                    mem.write_u8(None, value);
+                } else if matches!(opcode, ORA_ZPG | ORA_ZPX | ORA_IDX | ORA_IDY) {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.ac, ac_expect);
+                assert_eq!(cpu.sr, sr_expect);
+            }
+        }
+    }
+
+    #[test]
+    fn ins_eor() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [EOR_IMM, EOR_ZPG, EOR_ZPX, EOR_ABS, EOR_ABX, EOR_ABY, EOR_IDX, EOR_IDY] {
+            for (ac, value, ac_expect, sr_expect) in [
+                (0x00, 0x00, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, 0x00, 0x01, StatusFlags::RESERVED),
+                (0x00, 0x01, 0x01, StatusFlags::RESERVED),
+                (0x01, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0xF0, 0x0F, 0xFF, StatusFlags::RESERVED | StatusFlags::N),
+            ] {
+                cpu.reset(&mut mem);
+                cpu.ac = ac;
+
+                let addr: u16 = 0x000A;
+                println!("ac:{:02X} value:{:02X} ac_expect:{:?} sf_expect:{:?}", ac, value, ac_expect, sr_expect);
+                cpu.x = 0;
+                cpu.y = 0;
+                if matches!(opcode, EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY) {
+                    mem.write_u8(addr, value);
+                } else if matches!(opcode, EOR_IDX | EOR_IDY) {
+                    mem.write_u16(addr, addr + 2);
+                    mem.write_u8(addr + 2, value);
+                }
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                if opcode == EOR_IMM {
+                    mem.write_u8(None, value);
+                } else if matches!(opcode, EOR_ZPG | EOR_ZPX | EOR_IDX | EOR_IDY) {
                     mem.write_u8(None, (addr & 0xFF) as u8);
                 } else {
                     mem.write_u16(None, addr);

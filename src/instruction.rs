@@ -34,6 +34,26 @@ pub const AND_ABY: u8 = 0x39;
 pub const AND_IDX: u8 = 0x21;
 pub const AND_IDY: u8 = 0x31;
 
+// EOR - Exclusive-OR Memory with Accumulator
+pub const EOR_IMM: u8 = 0x49;
+pub const EOR_ZPG: u8 = 0x45;
+pub const EOR_ZPX: u8 = 0x55;
+pub const EOR_ABS: u8 = 0x4D;
+pub const EOR_ABX: u8 = 0x5D;
+pub const EOR_ABY: u8 = 0x59;
+pub const EOR_IDX: u8 = 0x41;
+pub const EOR_IDY: u8 = 0x51;
+
+// ORA - OR Memory with Accumulator
+pub const ORA_IMM: u8 = 0x09;
+pub const ORA_ZPG: u8 = 0x05;
+pub const ORA_ZPX: u8 = 0x15;
+pub const ORA_ABS: u8 = 0x0D;
+pub const ORA_ABX: u8 = 0x1D;
+pub const ORA_ABY: u8 = 0x19;
+pub const ORA_IDX: u8 = 0x01;
+pub const ORA_IDY: u8 = 0x11;
+
 // Flag Instructions
 pub const CLC: u8 = 0x18;
 pub const CLD: u8 = 0xD8;
@@ -109,6 +129,24 @@ impl Instruction {
             AND_ABY => Ok(Self { opcode, mnemonic: "AND", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
             AND_IDX => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 6 }),
             AND_IDY => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            EOR_IMM => Ok(Self { opcode, mnemonic: "EOR", bytes: 2, cycles: 2 }),
+            EOR_ZPG => Ok(Self { opcode, mnemonic: "EOR", bytes: 2, cycles: 3 }),
+            EOR_ZPX => Ok(Self { opcode, mnemonic: "EOR", bytes: 2, cycles: 4 }),
+            EOR_ABS => Ok(Self { opcode, mnemonic: "EOR", bytes: 3, cycles: 4 }),
+            EOR_ABX => Ok(Self { opcode, mnemonic: "EOR", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            EOR_ABY => Ok(Self { opcode, mnemonic: "EOR", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            EOR_IDX => Ok(Self { opcode, mnemonic: "EOR", bytes: 2, cycles: 6 }),
+            EOR_IDY => Ok(Self { opcode, mnemonic: "EOR", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            ORA_IMM => Ok(Self { opcode, mnemonic: "ORA", bytes: 2, cycles: 2 }),
+            ORA_ZPG => Ok(Self { opcode, mnemonic: "ORA", bytes: 2, cycles: 3 }),
+            ORA_ZPX => Ok(Self { opcode, mnemonic: "ORA", bytes: 2, cycles: 4 }),
+            ORA_ABS => Ok(Self { opcode, mnemonic: "ORA", bytes: 3, cycles: 4 }),
+            ORA_ABX => Ok(Self { opcode, mnemonic: "ORA", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ORA_ABY => Ok(Self { opcode, mnemonic: "ORA", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ORA_IDX => Ok(Self { opcode, mnemonic: "ORA", bytes: 2, cycles: 6 }),
+            ORA_IDY => Ok(Self { opcode, mnemonic: "ORA", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
             CLC     => Ok(Self { opcode, mnemonic: "CLC", bytes: 1, cycles: 2 }),
             CLD     => Ok(Self { opcode, mnemonic: "CLS", bytes: 1, cycles: 2 }),
