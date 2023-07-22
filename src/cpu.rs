@@ -129,7 +129,7 @@ impl Cpu {
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
 
-                    println!("[after {}] {:?}\n", ins.mnemonic, self);
+                    println!("[after {:?}] {:?}\n", ins.mnemonic, self);
                 },
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
