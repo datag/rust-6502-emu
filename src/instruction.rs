@@ -108,6 +108,20 @@ pub const LDA_ABY: u8 = 0xB9;
 pub const LDA_IDX: u8 = 0xA1;
 pub const LDA_IDY: u8 = 0xB1;
 
+// LDX - Load Index X with Memory
+pub const LDX_IMM: u8 = 0xA2;
+pub const LDX_ZPG: u8 = 0xA6;
+pub const LDX_ZPY: u8 = 0xB6;
+pub const LDX_ABS: u8 = 0xAE;
+pub const LDX_ABY: u8 = 0xBE;
+
+// LDY - Load Index Y with Memory
+pub const LDY_IMM: u8 = 0xA0;
+pub const LDY_ZPG: u8 = 0xA4;
+pub const LDY_ZPY: u8 = 0xB4;
+pub const LDY_ABS: u8 = 0xAC;
+pub const LDY_ABY: u8 = 0xBC;
+
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
@@ -214,6 +228,18 @@ impl Instruction {
             LDA_ABY => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
             LDA_IDX => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IDX, bytes: 2, cycles: 6 }),
             LDA_IDY => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            LDX_IMM => Ok(Self { opcode, mnemonic: Mnemonic::LDX, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            LDX_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::LDX, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            LDX_ZPY => Ok(Self { opcode, mnemonic: Mnemonic::LDX, addr_mode: ZPY, bytes: 2, cycles: 4 }),
+            LDX_ABS => Ok(Self { opcode, mnemonic: Mnemonic::LDX, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            LDX_ABY => Ok(Self { opcode, mnemonic: Mnemonic::LDX, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */  }),
+
+            LDY_IMM => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            LDY_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            LDY_ZPY => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ZPY, bytes: 2, cycles: 4 }),
+            LDY_ABS => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            LDY_ABY => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */  }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 

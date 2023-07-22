@@ -358,14 +358,23 @@ impl Cpu {
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
             },
 
-            LDA_IMM | LDA_ZPG | LDA_ZPX | LDA_ABS | LDA_ABX | LDA_ABY | LDA_IDX | LDA_IDY => {
+            LDA_IMM | LDA_ZPG | LDA_ZPX | LDA_ABS | LDA_ABX | LDA_ABY | LDA_IDX | LDA_IDY
+            | LDX_IMM | LDX_ZPG | LDX_ZPY | LDX_ABS | LDX_ABY
+            | LDY_IMM | LDY_ZPG | LDY_ZPY | LDY_ABS | LDY_ABY => {
+                // TODO: possible page crossing additional cycle for LDA: ABX, ABY and IDX  and LDX/LDY: ABX?
                 let addr = self.fetch_addr(mem, ins, cur_addr);
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X}", value);
 
-                self.ac = value;
-                self.sr.set(StatusFlags::Z, self.ac == 0);
-                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
+                match ins.mnemonic {
+                    Mnemonic::LDA => self.ac = value,
+                    Mnemonic::LDX => self.x = value,
+                    Mnemonic::LDY => self.y = value,
+                    _ => panic!("Undefined LD* opcode {:02X}", opcode),
+                }
+
+                self.sr.set(StatusFlags::Z, value == 0);
+                self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
             },
 
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
@@ -969,10 +978,14 @@ mod tests {
     }
 
     #[test]
-    fn ins_lda() {
+    fn ins_ldaldxldy() {
         let (mut cpu, mut mem) = setup();
 
-        for opcode in [LDA_IMM, LDA_ZPG, LDA_ZPX, LDA_ABS, LDA_ABX, LDA_ABY, LDA_IDY, LDA_IDY] {
+        for opcode in [
+                LDA_IMM, LDA_ZPG, LDA_ZPX, LDA_ABS, LDA_ABX, LDA_ABY, LDA_IDY, LDA_IDY,
+                LDX_IMM, LDX_ZPG, LDX_ZPY, LDX_ABS, LDX_ABY,
+                LDY_IMM, LDY_ZPG, LDY_ZPY, LDY_ABS, LDY_ABY,
+            ] {
             for (value, sr_expect) in [
                 (0x00, StatusFlags::RESERVED | StatusFlags::Z),
                 (0x01, StatusFlags::RESERVED),
@@ -980,26 +993,34 @@ mod tests {
             ] {
                 cpu.reset(&mut mem);
 
+                let ins = Instruction::from_opcode(opcode).unwrap();
                 let addr: u16 = 0x000A;
                 cpu.x = 0;
                 cpu.y = 0;
-                if matches!(opcode, LDA_ZPG | LDA_ZPX | LDA_ABS | LDA_ABX | LDA_ABY) {
+                if matches!(ins.addr_mode, AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::ABS | AddressingMode::ABX | AddressingMode::ABY) {
                     mem.write_u8(addr, value);
-                } else if matches!(opcode, LDA_IDX | LDA_IDY) {
+                } else if matches!(ins.addr_mode, AddressingMode::IDX | AddressingMode::IDY) {
                     mem.write_u16(addr, addr + 2);
                     mem.write_u8(addr + 2, value);
                 }
                 mem.write_u8(ADDR_RESET_VECTOR, opcode);
-                if opcode == LDA_IMM {
+                if ins.addr_mode == AddressingMode::IMM {
                     mem.write_u8(None, value);
-                } else if matches!(opcode, LDA_ZPG | LDA_ZPX | LDA_IDX | LDA_IDY) {
+                } else if matches!(ins.addr_mode, AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::IDX | AddressingMode::IDY) {
                     mem.write_u8(None, (addr & 0xFF) as u8);
                 } else {
                     mem.write_u16(None, addr);
                 }
 
                 cpu.exec(&mut mem, 1);
-                assert_eq!(cpu.ac, value);
+
+                let value_reg = match ins.mnemonic {
+                    Mnemonic::LDA => cpu.ac,
+                    Mnemonic::LDX => cpu.x,
+                    Mnemonic::LDY => cpu.y,
+                    _ => panic!("Unhandled test case LD* {:02X}", opcode),
+                };
+                assert_eq!(value_reg, value);
                 assert_eq!(cpu.sr, sr_expect);
             }
         }
