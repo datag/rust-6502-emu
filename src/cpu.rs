@@ -356,7 +356,17 @@ impl Cpu {
 
                 self.sr.set(StatusFlags::Z, value == 0);
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
-            }
+            },
+
+            LDA_IMM | LDA_ZPG | LDA_ZPX | LDA_ABS | LDA_ABX | LDA_ABY | LDA_IDX | LDA_IDY => {
+                let addr = self.fetch_addr(mem, ins, cur_addr);
+                let value: u8 = mem.read_u8(addr);
+                println!("oper: 0x{:02X}", value);
+
+                self.ac = value;
+                self.sr.set(StatusFlags::Z, self.ac == 0);
+                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
+            },
 
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
@@ -954,6 +964,43 @@ mod tests {
                 assert_eq!(result, if matches!(opcode, INX | INY) { value.wrapping_add(1) } else { value.wrapping_sub(1) });
                 if result == 0 { assert!(cpu.sr.contains(StatusFlags::Z),) }
                 if result & 0b10000000 != 0 { assert!(cpu.sr.contains(StatusFlags::N)) }
+            }
+        }
+    }
+
+    #[test]
+    fn ins_lda() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [LDA_IMM, LDA_ZPG, LDA_ZPX, LDA_ABS, LDA_ABX, LDA_ABY, LDA_IDY, LDA_IDY] {
+            for (value, sr_expect) in [
+                (0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, StatusFlags::RESERVED),
+                (0xF0, StatusFlags::RESERVED | StatusFlags::N),
+            ] {
+                cpu.reset(&mut mem);
+
+                let addr: u16 = 0x000A;
+                cpu.x = 0;
+                cpu.y = 0;
+                if matches!(opcode, LDA_ZPG | LDA_ZPX | LDA_ABS | LDA_ABX | LDA_ABY) {
+                    mem.write_u8(addr, value);
+                } else if matches!(opcode, LDA_IDX | LDA_IDY) {
+                    mem.write_u16(addr, addr + 2);
+                    mem.write_u8(addr + 2, value);
+                }
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                if opcode == LDA_IMM {
+                    mem.write_u8(None, value);
+                } else if matches!(opcode, LDA_ZPG | LDA_ZPX | LDA_IDX | LDA_IDY) {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.ac, value);
+                assert_eq!(cpu.sr, sr_expect);
             }
         }
     }

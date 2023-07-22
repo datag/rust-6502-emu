@@ -98,6 +98,16 @@ pub const DEY: u8 = 0x88;   // DEY - Decrement Index Y by One
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
 
+// LDA - Load Accumulator with Memory
+pub const LDA_IMM: u8 = 0xA9;
+pub const LDA_ZPG: u8 = 0xA5;
+pub const LDA_ZPX: u8 = 0xB5;
+pub const LDA_ABS: u8 = 0xAD;
+pub const LDA_ABX: u8 = 0xBD;
+pub const LDA_ABY: u8 = 0xB9;
+pub const LDA_IDX: u8 = 0xA1;
+pub const LDA_IDY: u8 = 0xB1;
+
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
@@ -195,6 +205,15 @@ impl Instruction {
 
             JMP_ABS => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: ABS, bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: IND, bytes: 3, cycles: 5 }),
+
+            LDA_IMM => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            LDA_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            LDA_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            LDA_ABS => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            LDA_ABX => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            LDA_ABY => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            LDA_IDX => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            LDA_IDY => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
