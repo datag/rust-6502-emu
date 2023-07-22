@@ -32,6 +32,23 @@ impl Default for StatusFlags {
     }
 }
 
+#[derive(Debug)]
+pub enum AdressingMode {
+    Imp,    // Implied
+    Acc,    // Accumulator
+    Imm,    // Immediate
+    Zpg,    // Zero Page
+    Zpx,    // Zero Page,X
+    Zpy,    // Zero Page,Y
+    Rel,    // Relative
+    Abs,    // Absolute
+    Abx,    // Absolute,X
+    Aby,    // Absolute,Y
+    Ind,    // Indirect
+    Idx,    // Indexed Indirect
+    Idy,    // Indirect Indexed
+}
+
 pub struct Cpu {
     pub pc: u16,
     pub ac: u8,
