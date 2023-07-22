@@ -24,6 +24,16 @@ pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
 pub const BIT_ZPG: u8 = 0x24;
 pub const BIT_ABS: u8 = 0x2C;
 
+// AND - AND Memory with Accumulator
+pub const AND_IMM: u8 = 0x29;
+pub const AND_ZPG: u8 = 0x25;
+pub const AND_ZPX: u8 = 0x35;
+pub const AND_ABS: u8 = 0x2D;
+pub const AND_ABX: u8 = 0x3D;
+pub const AND_ABY: u8 = 0x39;
+pub const AND_IDX: u8 = 0x21;
+pub const AND_IDY: u8 = 0x31;
+
 // Flag Instructions
 pub const CLC: u8 = 0x18;
 pub const CLD: u8 = 0xD8;
@@ -90,6 +100,15 @@ impl Instruction {
 
             BIT_ZPG => Ok(Self { opcode, mnemonic: "BIT", bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Self { opcode, mnemonic: "BIT", bytes: 3, cycles: 4 }),
+
+            AND_IMM => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 2 }),
+            AND_ZPG => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 3 }),
+            AND_ZPX => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 4 }),
+            AND_ABS => Ok(Self { opcode, mnemonic: "AND", bytes: 3, cycles: 4 }),
+            AND_ABX => Ok(Self { opcode, mnemonic: "AND", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            AND_ABY => Ok(Self { opcode, mnemonic: "AND", bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            AND_IDX => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 6 }),
+            AND_IDY => Ok(Self { opcode, mnemonic: "AND", bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
             CLC     => Ok(Self { opcode, mnemonic: "CLC", bytes: 1, cycles: 2 }),
             CLD     => Ok(Self { opcode, mnemonic: "CLS", bytes: 1, cycles: 2 }),

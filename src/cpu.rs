@@ -5,6 +5,7 @@ use crate::instruction::*;
 use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xFFFC;                     // 0xFFFC LB, 0xFFFF HB for reading reset vector address
+pub const STACK_BASE: u16 = 0x0100;                     // 0x0100 to 0x01FF
 pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in memory; CPU starts with SP=0 and decrements 3x which is 0xFD
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
@@ -128,7 +129,7 @@ impl Cpu {
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
 
-                    println!("[after {}] {:?}", ins.mnemonic, self);
+                    println!("[after {}] {:?}\n", ins.mnemonic, self);
                 },
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
@@ -224,22 +225,18 @@ impl Cpu {
 
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
                 // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
-                let value: u8;
-                if opcode == ADC_IMM {
-                    value = mem.read_u8(cur_addr);
-                } else {
-                    let addr = match opcode {
-                        ADC_ZPG => self.fetch_addr_zpg(mem, cur_addr),
-                        ADC_ZPX => self.fetch_addr_zpx(mem, cur_addr),
-                        ADC_ABS => self.fetch_addr_abs(mem, cur_addr),
-                        ADC_ABX => self.fetch_addr_abx(mem, cur_addr),
-                        ADC_ABY => self.fetch_addr_aby(mem, cur_addr),
-                        ADC_IDX => self.fetch_addr_idx(mem, cur_addr),
-                        ADC_IDY => self.fetch_addr_idy(mem, cur_addr),
-                        _ => panic!("Unhandled ADC opcode {:02X}", opcode),
-                    };
-                    value = mem.read_u8(addr);
-                }
+                let addr: u16 = match opcode {
+                    ADC_IMM => cur_addr,
+                    ADC_ZPG => self.fetch_addr_zpg(mem, cur_addr),
+                    ADC_ZPX => self.fetch_addr_zpx(mem, cur_addr),
+                    ADC_ABS => self.fetch_addr_abs(mem, cur_addr),
+                    ADC_ABX => self.fetch_addr_abx(mem, cur_addr),
+                    ADC_ABY => self.fetch_addr_aby(mem, cur_addr),
+                    ADC_IDX => self.fetch_addr_idx(mem, cur_addr),
+                    ADC_IDY => self.fetch_addr_idy(mem, cur_addr),
+                    _ => panic!("Unhandled ADC opcode {:02X}", opcode),
+                };
+                let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X}", value);
 
                 let add_carry = if self.sr.contains(StatusFlags::C) { 1 } else { 0 };
@@ -268,6 +265,27 @@ impl Cpu {
                 self.sr.set(StatusFlags::N, value & StatusFlags::N.bits() != 0);    // transfer bit 7 of operand to N
                 self.sr.set(StatusFlags::V, value & StatusFlags::V.bits() != 0);    // transfer bit 6 of operand to V
                 self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
+            },
+
+            AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY => {
+                let addr = match opcode {
+                    AND_IMM => cur_addr,
+                    AND_ZPG => self.fetch_addr_zpg(mem, cur_addr),
+                    AND_ZPX => self.fetch_addr_zpx(mem, cur_addr),
+                    AND_ABS => self.fetch_addr_abs(mem, cur_addr),
+                    AND_ABX => self.fetch_addr_abx(mem, cur_addr),
+                    AND_ABY => self.fetch_addr_aby(mem, cur_addr),
+                    AND_IDX => self.fetch_addr_idx(mem, cur_addr),
+                    AND_IDY => self.fetch_addr_idy(mem, cur_addr),
+                    _ => panic!("Unhandled ADC opcode {:02X}", opcode),
+                };
+            
+                let value: u8 = mem.read_u8(addr);
+                println!("oper: 0x{:02X} @{:04X}", value, addr);
+
+                self.ac &= value;
+                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
+                self.sr.set(StatusFlags::Z, self.ac == 0);
             },
 
             CLC => self.sr.remove(StatusFlags::C),
@@ -625,6 +643,47 @@ mod tests {
                     mem.write_u16(None, addr);
                 }
                 cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.sr, sr_expect);
+            }
+        }
+    }
+
+    #[test]
+    fn ins_and() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [AND_IMM, AND_ZPG, AND_ZPX, AND_ABS, AND_ABX, AND_ABY, AND_IDX, AND_IDY] {
+            for (ac, value, ac_expect, sr_expect) in [
+                (0x00, 0x00, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, 0x00, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x00, 0x01, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0xA1, 0x0F, 0x01, StatusFlags::RESERVED),
+                (0xFF, 0xF0, 0xF0, StatusFlags::RESERVED | StatusFlags::N),
+            ] {
+                cpu.reset(&mut mem);
+                cpu.ac = ac;
+
+                let addr: u16 = 0x000A;
+                println!("ac:{:02X} value:{:02X} ac_expect:{:?} sf_expect:{:?}", ac, value, ac_expect, sr_expect);
+                cpu.x = 0;
+                cpu.y = 0;
+                if matches!(opcode, AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY) {
+                    mem.write_u8(addr, value);
+                } else if matches!(opcode, AND_IDX | AND_IDY) {
+                    mem.write_u16(addr, addr + 2);
+                    mem.write_u8(addr + 2, value);
+                }
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                if opcode == AND_IMM {
+                    mem.write_u8(None, value);
+                } else if matches!(opcode, AND_ZPG | AND_ZPX | AND_IDX | AND_IDY) {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.ac, ac_expect);
                 assert_eq!(cpu.sr, sr_expect);
             }
         }

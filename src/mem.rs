@@ -60,9 +60,9 @@ impl Memory {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
 
-        // // ADC #1
-        // self.write_u8(ADDR_RESET_VECTOR + 0, 0x69);
-        // self.write_u8(ADDR_RESET_VECTOR + 1, 0x01);
+        // ADC #1
+        self.write_u8(ADDR_RESET_VECTOR, 0x69);
+        self.write_u8(None, 0x01);
 
         // // ADC #FF
         // self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
@@ -82,17 +82,17 @@ impl Memory {
         // self.write_u8(ADDR_RESET_VECTOR + 0, 0x2C);
         // self.write_u16(ADDR_RESET_VECTOR + 1, 0x00F0);
 
-        // B**
-        self.write_u8(ADDR_RESET_VECTOR + 0, crate::instruction::BVS_REL);
-        self.write_u8(ADDR_RESET_VECTOR + 1, (-2 as i8) as u8);
+        // // B**
+        // self.write_u8(ADDR_RESET_VECTOR + 0, crate::instruction::BVS_REL);
+        // self.write_u8(ADDR_RESET_VECTOR + 1, (-2 as i8) as u8);
 
-        // some instruction
-        self.write_u8(ADDR_RESET_VECTOR + 2, crate::instruction::ADC_IMM);
-        self.write_u8(ADDR_RESET_VECTOR + 3, 0x01);
+        // // some instruction
+        // self.write_u8(ADDR_RESET_VECTOR + 2, crate::instruction::ADC_IMM);
+        // self.write_u8(ADDR_RESET_VECTOR + 3, 0x01);
 
-        // some other instruction
-        self.write_u8(ADDR_RESET_VECTOR + 4, crate::instruction::ADC_IMM);
-        self.write_u8(ADDR_RESET_VECTOR + 5, 0x02);
+        // // some other instruction
+        // self.write_u8(ADDR_RESET_VECTOR + 4, crate::instruction::ADC_IMM);
+        // self.write_u8(ADDR_RESET_VECTOR + 5, 0x02);
 
     }
 
