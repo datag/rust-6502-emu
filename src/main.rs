@@ -39,7 +39,7 @@ fn main() {
         verbosity,
     };
 
-    tinker();
+    //tinker();
 
     if let Err(err) = rust_6502_emu::run(config) {
         println!("Application error: {err}");

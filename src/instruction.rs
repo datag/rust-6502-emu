@@ -1,6 +1,5 @@
 use std::fmt;
-use crate::cpu::AdressingMode;
-use crate::cpu::AdressingMode::*;
+use AddressingMode::*;
 
 // ADC - Add with Carry
 pub const ADC_IMM: u8 = 0x69;
@@ -95,7 +94,7 @@ pub const NOP: u8 = 0xEA;
 pub struct Instruction {
     pub opcode: u8,
     pub mnemonic: &'static str,
-    pub addr_mode: AdressingMode,
+    pub addr_mode: AddressingMode,
     pub bytes: u8,
     pub cycles: u8,
 }
@@ -194,5 +193,63 @@ impl fmt::Debug for Instruction {
             .field("Bytes", &self.bytes)
             .field("Cycles", &self.cycles)
             .finish()
+    }
+}
+
+#[derive(Debug)]
+pub enum AddressingMode {
+    Imp,    // Implied
+    Acc,    // Accumulator
+    Imm,    // Immediate
+    Zpg,    // Zero Page
+    Zpx,    // Zero Page,X
+    Zpy,    // Zero Page,Y
+    Rel,    // Relative
+    Abs,    // Absolute
+    Abx,    // Absolute,X
+    Aby,    // Absolute,Y
+    Ind,    // Indirect
+    Idx,    // Indexed Indirect
+    Idy,    // Indirect Indexed
+}
+
+impl AddressingMode {
+    pub fn abbr(&self) -> &'static str {
+        let (abbr, _, _) = self.info();
+        abbr
+    }
+
+    pub fn name(&self) -> &'static str {
+        let (_, name, _) = self.info();
+        name
+    }
+
+    pub fn operands(&self) -> &'static str {
+        let (_, _, operands) = self.info();
+        operands
+    }
+
+    fn info(&self) -> (&'static str, &'static str, &'static str) {
+        match self {
+            Self::Imp => ("IMP", "Implied",          ""),
+            Self::Acc => ("ACC", "Accumulator",      "A"),
+            Self::Imm => ("IMM", "Immediate",        "#oper"),
+            Self::Zpg => ("ZPG", "Zero Page",        "oper"),
+            Self::Zpx => ("ZPX", "Zero Page,X",      "oper,X"),
+            Self::Zpy => ("ZPY", "Zero Page,Y",      "oper,Y"),
+            Self::Rel => ("REL", "Relative",         "oper"),
+            Self::Abs => ("ABS", "Absolute",         "oper"),
+            Self::Abx => ("ABX", "Absolute,X",       "oper,X"),
+            Self::Aby => ("ABY", "Absolute,Y",       "oper,Y"),
+            Self::Ind => ("IND", "Indirect",         "(oper)"),
+            Self::Idx => ("IDX", "Indexed Indirect", "(oper,X)"),
+            Self::Idy => ("IDY", "Indirect Indexed", "(oper),Y"),
+        }
+    }
+}
+
+impl fmt::Display for AddressingMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.abbr())
     }
 }
