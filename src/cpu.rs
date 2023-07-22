@@ -216,6 +216,22 @@ impl Cpu {
         self.addr_rel(mem.read_i8(addr))
     }
 
+    fn fetch_addr(&self, mem: &Memory, ins: &Instruction, addr: u16) -> u16 {
+        match ins.addr_mode {
+            AddressingMode::IMM => addr,
+            AddressingMode::ZPG => self.fetch_addr_zpg(mem, addr),
+            AddressingMode::ZPX => self.fetch_addr_zpx(mem, addr),
+            AddressingMode::ZPY => self.fetch_addr_zpy(mem, addr),
+            AddressingMode::ABS => self.fetch_addr_abs(mem, addr),
+            AddressingMode::ABX => self.fetch_addr_abx(mem, addr),
+            AddressingMode::ABY => self.fetch_addr_aby(mem, addr),
+            AddressingMode::IND => self.fetch_addr_ind(mem, addr),
+            AddressingMode::IDX => self.fetch_addr_idx(mem, addr),
+            AddressingMode::IDY => self.fetch_addr_idy(mem, addr),
+            _ => panic!("Unhandled address mode {}", ins.addr_mode),
+        }
+    }
+    
     fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
         let opcode = ins.opcode;
         let mut cycles_additional = 0;
@@ -225,17 +241,7 @@ impl Cpu {
 
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY => {
                 // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
-                let addr: u16 = match opcode {
-                    ADC_IMM => cur_addr,
-                    ADC_ZPG => self.fetch_addr_zpg(mem, cur_addr),
-                    ADC_ZPX => self.fetch_addr_zpx(mem, cur_addr),
-                    ADC_ABS => self.fetch_addr_abs(mem, cur_addr),
-                    ADC_ABX => self.fetch_addr_abx(mem, cur_addr),
-                    ADC_ABY => self.fetch_addr_aby(mem, cur_addr),
-                    ADC_IDX => self.fetch_addr_idx(mem, cur_addr),
-                    ADC_IDY => self.fetch_addr_idy(mem, cur_addr),
-                    _ => panic!("Unhandled ADC opcode {:02X}", opcode),
-                };
+                let addr = self.fetch_addr(mem, ins, cur_addr);
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X}", value);
 
@@ -251,15 +257,10 @@ impl Cpu {
                 // TODO: V
             }
 
-            JMP_ABS => self.pc = self.fetch_addr_abs(mem, cur_addr),
-            JMP_IND => self.pc = self.fetch_addr_ind(mem, cur_addr),
+            JMP_ABS | JMP_IND => self.pc = self.fetch_addr(mem, ins, cur_addr),
 
             BIT_ZPG | BIT_ABS => {
-                let addr = match opcode {
-                    BIT_ABS => self.fetch_addr_abs(mem, cur_addr),
-                    BIT_ZPG => self.fetch_addr_zpg(mem, cur_addr),
-                    _ => panic!("Unhandled BIT opcode {:02X}", opcode),
-                };
+                let addr = self.fetch_addr(mem, ins, cur_addr);
                 let value = mem.read_u8(addr);
                 // println!("addr: {:04X} value: {:02X} result: {:02X}", addr, value, value & self.ac);
                 self.sr.set(StatusFlags::N, value & StatusFlags::N.bits() != 0);    // transfer bit 7 of operand to N
@@ -270,28 +271,18 @@ impl Cpu {
             AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY
             | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
             | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
-                let addr = match opcode {
-                    AND_IMM | EOR_IMM | ORA_IMM => cur_addr,
-                    AND_ZPG | EOR_ZPG | ORA_ZPG => self.fetch_addr_zpg(mem, cur_addr),
-                    AND_ZPX | EOR_ZPX | ORA_ZPX => self.fetch_addr_zpx(mem, cur_addr),
-                    AND_ABS | EOR_ABS | ORA_ABS => self.fetch_addr_abs(mem, cur_addr),
-                    AND_ABX | EOR_ABX | ORA_ABX => self.fetch_addr_abx(mem, cur_addr),
-                    AND_ABY | EOR_ABY | ORA_ABY => self.fetch_addr_aby(mem, cur_addr),
-                    AND_IDX | EOR_IDX | ORA_IDX => self.fetch_addr_idx(mem, cur_addr),
-                    AND_IDY | EOR_IDY | ORA_IDY => self.fetch_addr_idy(mem, cur_addr),
-                    _ => panic!("Unhandled logical operation opcode {:02X}", opcode),
-                };
+                let addr = self.fetch_addr(mem, ins, cur_addr);
             
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X} @{:04X}", value, addr);
 
+                // FIXME: match mnemonic
                 match opcode {
                     AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY => self.ac &= value,
                     EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY => self.ac ^= value,
                     ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => self.ac |= value,
                     _ => panic!("Unhandled logical operation opcode {:02X}", opcode),
-                }
-                
+                };
 
                 self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
                 self.sr.set(StatusFlags::Z, self.ac == 0);
@@ -329,15 +320,10 @@ impl Cpu {
 
             INC_ZPG | INC_ZPX | INC_ABS | INC_ABX | DEC_ZPG | DEC_ZPX | DEC_ABS | DEC_ABX => {
                 // TODO: possible page crossing additional cycle for ZPX and ABX?
-                let addr: u16;
-                match opcode {
-                    INC_ZPG | DEC_ZPG => addr = self.fetch_addr_zpg(mem, cur_addr),
-                    INC_ZPX | DEC_ZPX => addr = self.fetch_addr_zpx(mem, cur_addr),
-                    INC_ABS | DEC_ABS => addr = self.fetch_addr_abs(mem, cur_addr),
-                    INC_ABX | DEC_ABX => addr = self.fetch_addr_abx(mem, cur_addr),
-                    _ => panic!("Unhandled INC/DEC opcode {:02X}", opcode),
-                }
+                let addr = self.fetch_addr(mem, ins, cur_addr);
                 let mut value: u8 = mem.read_u8(addr);
+
+                // FIXME: test for INC mnemonic
                 if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
                 mem.write_u8(addr, value);
                 self.sr.set(StatusFlags::Z, value == 0);
@@ -351,6 +337,7 @@ impl Cpu {
                     _ => panic!("Undefined INC/DEC opcode {:02X}", opcode),
                 };
                 
+                // FIXME: test for INC mnemonic
                 if matches!(opcode, INX | INY) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
                 if matches!(opcode, INX | DEX) { self.x = value } else { self.y = value }
 

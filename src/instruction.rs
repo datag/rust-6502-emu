@@ -197,7 +197,7 @@ impl fmt::Debug for Instruction {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Mnemonic {
     ADC,    // Add with Carry
     AND,    // Logical AND
@@ -258,7 +258,7 @@ pub enum Mnemonic {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AddressingMode {
     IMP,    // Implied
     ACC,    // Accumulator
