@@ -102,82 +102,82 @@ pub struct Instruction {
 impl Instruction {
     pub fn from_opcode(opcode: u8) -> Result<Self, ()> {
         match opcode {
-            ADC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Imm, bytes: 2, cycles: 2 }),
-            ADC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Zpg, bytes: 2, cycles: 3 }),
-            ADC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Zpx, bytes: 2, cycles: 4 }),
-            ADC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Abs, bytes: 3, cycles: 4 }),
-            ADC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Abx, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ADC_ABY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Aby, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ADC_IDX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Idx, bytes: 2, cycles: 6 }),
-            ADC_IDY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: Idy, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+            ADC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            ADC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            ADC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            ADC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            ADC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_ABY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ADC_IDX => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            ADC_IDY => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            BCC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCC, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BCS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCS, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BEQ_REL => Ok(Self { opcode, mnemonic: Mnemonic::BEQ, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BNE_REL => Ok(Self { opcode, mnemonic: Mnemonic::BNE, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BPL_REL => Ok(Self { opcode, mnemonic: Mnemonic::BPL, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BMI_REL => Ok(Self { opcode, mnemonic: Mnemonic::BMI, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BVC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BVC, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
-            BVS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BVS, addr_mode: Rel, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BCC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCC, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BCS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCS, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BEQ_REL => Ok(Self { opcode, mnemonic: Mnemonic::BEQ, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BNE_REL => Ok(Self { opcode, mnemonic: Mnemonic::BNE, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BPL_REL => Ok(Self { opcode, mnemonic: Mnemonic::BPL, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BMI_REL => Ok(Self { opcode, mnemonic: Mnemonic::BMI, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BVC, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
+            BVS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BVS, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
 
-            BIT_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: Zpg, bytes: 2, cycles: 3 }),
-            BIT_ABS => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: Abs, bytes: 3, cycles: 4 }),
+            BIT_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            BIT_ABS => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: ABS, bytes: 3, cycles: 4 }),
 
-            AND_IMM => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Imm, bytes: 2, cycles: 2 }),
-            AND_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Zpg, bytes: 2, cycles: 3 }),
-            AND_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Zpx, bytes: 2, cycles: 4 }),
-            AND_ABS => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Abs, bytes: 3, cycles: 4 }),
-            AND_ABX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Abx, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            AND_ABY => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Aby, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            AND_IDX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Idx, bytes: 2, cycles: 6 }),
-            AND_IDY => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: Idy, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+            AND_IMM => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            AND_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            AND_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            AND_ABS => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            AND_ABX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            AND_ABY => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            AND_IDX => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            AND_IDY => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            EOR_IMM => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Imm, bytes: 2, cycles: 2 }),
-            EOR_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Zpg, bytes: 2, cycles: 3 }),
-            EOR_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Zpx, bytes: 2, cycles: 4 }),
-            EOR_ABS => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Abs, bytes: 3, cycles: 4 }),
-            EOR_ABX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Abx, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            EOR_ABY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Aby, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            EOR_IDX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Idx, bytes: 2, cycles: 6 }),
-            EOR_IDY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Idy, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+            EOR_IMM => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            EOR_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            EOR_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            EOR_ABS => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            EOR_ABX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            EOR_ABY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            EOR_IDX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            EOR_IDY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            ORA_IMM => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Imm, bytes: 2, cycles: 2 }),
-            ORA_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Zpg, bytes: 2, cycles: 3 }),
-            ORA_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Zpx, bytes: 2, cycles: 4 }),
-            ORA_ABS => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Abs, bytes: 3, cycles: 4 }),
-            ORA_ABX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Abx, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ORA_ABY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Aby, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
-            ORA_IDX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Idx, bytes: 2, cycles: 6 }),
-            ORA_IDY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: Idy, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+            ORA_IMM => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            ORA_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            ORA_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            ORA_ABS => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            ORA_ABX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ORA_ABY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            ORA_IDX => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            ORA_IDY => Ok(Self { opcode, mnemonic: Mnemonic::EOR, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
 
-            CLC     => Ok(Self { opcode, mnemonic: Mnemonic::CLC, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            CLD     => Ok(Self { opcode, mnemonic: Mnemonic::CLD, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            CLI     => Ok(Self { opcode, mnemonic: Mnemonic::CLI, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            CLV     => Ok(Self { opcode, mnemonic: Mnemonic::CLV, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            SEC     => Ok(Self { opcode, mnemonic: Mnemonic::SEC, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            SED     => Ok(Self { opcode, mnemonic: Mnemonic::SED, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            SEI     => Ok(Self { opcode, mnemonic: Mnemonic::SEI, addr_mode: Imp, bytes: 1, cycles: 2 }),
+            CLC     => Ok(Self { opcode, mnemonic: Mnemonic::CLC, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            CLD     => Ok(Self { opcode, mnemonic: Mnemonic::CLD, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            CLI     => Ok(Self { opcode, mnemonic: Mnemonic::CLI, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            CLV     => Ok(Self { opcode, mnemonic: Mnemonic::CLV, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            SEC     => Ok(Self { opcode, mnemonic: Mnemonic::SEC, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            SED     => Ok(Self { opcode, mnemonic: Mnemonic::SED, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            SEI     => Ok(Self { opcode, mnemonic: Mnemonic::SEI, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
-            INC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: Zpg, bytes: 2, cycles: 5 }),
-            INC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: Zpx, bytes: 2, cycles: 6 }),
-            INC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: Abs, bytes: 3, cycles: 6 }),
-            INC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: Abx, bytes: 3, cycles: 7 }),
+            INC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            INC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            INC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            INC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::INC, addr_mode: ABX, bytes: 3, cycles: 7 }),
 
-            INX     => Ok(Self { opcode, mnemonic: Mnemonic::INX, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            INY     => Ok(Self { opcode, mnemonic: Mnemonic::INY, addr_mode: Imp, bytes: 1, cycles: 2 }),
+            INX     => Ok(Self { opcode, mnemonic: Mnemonic::INX, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            INY     => Ok(Self { opcode, mnemonic: Mnemonic::INY, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
-            DEC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: Zpg, bytes: 2, cycles: 5 }),
-            DEC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: Zpx, bytes: 2, cycles: 6 }),
-            DEC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: Abs, bytes: 3, cycles: 6 }),
-            DEC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: Abx, bytes: 3, cycles: 7 }),
+            DEC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            DEC_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            DEC_ABS => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            DEC_ABX => Ok(Self { opcode, mnemonic: Mnemonic::DEC, addr_mode: ABX, bytes: 3, cycles: 7 }),
 
-            DEX     => Ok(Self { opcode, mnemonic: Mnemonic::DEX, addr_mode: Imp, bytes: 1, cycles: 2 }),
-            DEY     => Ok(Self { opcode, mnemonic: Mnemonic::DEY, addr_mode: Imp, bytes: 1, cycles: 2 }),
+            DEX     => Ok(Self { opcode, mnemonic: Mnemonic::DEX, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            DEY     => Ok(Self { opcode, mnemonic: Mnemonic::DEY, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
-            JMP_ABS => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: Abs, bytes: 3, cycles: 3 }),
-            JMP_IND => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: Ind, bytes: 3, cycles: 5 }),
+            JMP_ABS => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: ABS, bytes: 3, cycles: 3 }),
+            JMP_IND => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: IND, bytes: 3, cycles: 5 }),
 
-            NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: Imp, bytes: 1, cycles: 2 }),
+            NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
             _ => Err(()),
         }
@@ -257,21 +257,22 @@ pub enum Mnemonic {
     TYA,    // Transfer Y to Accumulator
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub enum AddressingMode {
-    Imp,    // Implied
-    Acc,    // Accumulator
-    Imm,    // Immediate
-    Zpg,    // Zero Page
-    Zpx,    // Zero Page,X
-    Zpy,    // Zero Page,Y
-    Rel,    // Relative
-    Abs,    // Absolute
-    Abx,    // Absolute,X
-    Aby,    // Absolute,Y
-    Ind,    // Indirect
-    Idx,    // Indexed Indirect
-    Idy,    // Indirect Indexed
+    IMP,    // Implied
+    ACC,    // Accumulator
+    IMM,    // Immediate
+    ZPG,    // Zero Page
+    ZPX,    // Zero Page,X
+    ZPY,    // Zero Page,Y
+    REL,    // Relative
+    ABS,    // Absolute
+    ABX,    // Absolute,X
+    ABY,    // Absolute,Y
+    IND,    // Indirect
+    IDX,    // Indexed Indirect
+    IDY,    // Indirect Indexed
 }
 
 impl AddressingMode {
@@ -292,19 +293,19 @@ impl AddressingMode {
 
     fn info(&self) -> (&'static str, &'static str, &'static str) {
         match self {
-            Self::Imp => ("IMP", "Implied",          ""),
-            Self::Acc => ("ACC", "Accumulator",      "A"),
-            Self::Imm => ("IMM", "Immediate",        "#oper"),
-            Self::Zpg => ("ZPG", "Zero Page",        "oper"),
-            Self::Zpx => ("ZPX", "Zero Page,X",      "oper,X"),
-            Self::Zpy => ("ZPY", "Zero Page,Y",      "oper,Y"),
-            Self::Rel => ("REL", "Relative",         "oper"),
-            Self::Abs => ("ABS", "Absolute",         "oper"),
-            Self::Abx => ("ABX", "Absolute,X",       "oper,X"),
-            Self::Aby => ("ABY", "Absolute,Y",       "oper,Y"),
-            Self::Ind => ("IND", "Indirect",         "(oper)"),
-            Self::Idx => ("IDX", "Indexed Indirect", "(oper,X)"),
-            Self::Idy => ("IDY", "Indirect Indexed", "(oper),Y"),
+            Self::IMP => ("IMP", "Implied",          ""),
+            Self::ACC => ("ACC", "Accumulator",      "A"),
+            Self::IMM => ("IMM", "Immediate",        "#oper"),
+            Self::ZPG => ("ZPG", "Zero Page",        "oper"),
+            Self::ZPX => ("ZPX", "Zero Page,X",      "oper,X"),
+            Self::ZPY => ("ZPY", "Zero Page,Y",      "oper,Y"),
+            Self::REL => ("REL", "Relative",         "oper"),
+            Self::ABS => ("ABS", "Absolute",         "oper"),
+            Self::ABX => ("ABX", "Absolute,X",       "oper,X"),
+            Self::ABY => ("ABY", "Absolute,Y",       "oper,Y"),
+            Self::IND => ("IND", "Indirect",         "(oper)"),
+            Self::IDX => ("IDX", "Indexed Indirect", "(oper,X)"),
+            Self::IDY => ("IDY", "Indirect Indexed", "(oper),Y"),
         }
     }
 }
