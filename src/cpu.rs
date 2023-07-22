@@ -276,12 +276,11 @@ impl Cpu {
                 let value: u8 = mem.read_u8(addr);
                 println!("oper: 0x{:02X} @{:04X}", value, addr);
 
-                // FIXME: match mnemonic
-                match opcode {
-                    AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY => self.ac &= value,
-                    EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY => self.ac ^= value,
-                    ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => self.ac |= value,
-                    _ => panic!("Unhandled logical operation opcode {:02X}", opcode),
+                match ins.mnemonic {
+                    Mnemonic::AND => self.ac &= value,
+                    Mnemonic::EOR => self.ac ^= value,
+                    Mnemonic::ORA => self.ac |= value,
+                    _ => panic!("Unhandled mnemonic {:?}", ins.mnemonic),
                 };
 
                 self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
@@ -323,8 +322,7 @@ impl Cpu {
                 let addr = self.fetch_addr(mem, ins, cur_addr);
                 let mut value: u8 = mem.read_u8(addr);
 
-                // FIXME: test for INC mnemonic
-                if matches!(opcode, INC_ZPG | INC_ZPX | INC_ABS | INC_ABX) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
+                if ins.mnemonic == Mnemonic::INC { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
                 mem.write_u8(addr, value);
                 self.sr.set(StatusFlags::Z, value == 0);
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
@@ -336,8 +334,7 @@ impl Cpu {
                     INY | DEY => self.y,
                     _ => panic!("Undefined INC/DEC opcode {:02X}", opcode),
                 };
-                
-                // FIXME: test for INC mnemonic
+
                 if matches!(opcode, INX | INY) { value = value.wrapping_add(1) } else { value = value.wrapping_sub(1) }
                 if matches!(opcode, INX | DEX) { self.x = value } else { self.y = value }
 
