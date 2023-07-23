@@ -5,7 +5,7 @@ use std::io::{BufReader, Read, Error};
 use crate::cpu;
 use crate::instruction::{JSR_ABS, NOP};
 
-const MEMORY_SIZE: usize = 0xFFFF;
+const MEMORY_SIZE: usize = 0x10000;
 
 pub const ADDR_RESET_VECTOR: u16 = 0xE000;
 
@@ -125,7 +125,7 @@ impl Memory {
             }
         }
         self.data[write_addr as usize] = value;
-        self.current_write_addr = Some(write_addr + 1);
+        self.current_write_addr = Some(write_addr.wrapping_add(1));
     }
 
     pub fn write_i8<T: Into<Option<u16>>>(&mut self, addr: T, value: i8) {
@@ -140,7 +140,7 @@ impl Memory {
             }
         }
         self.data[write_addr as usize] = value as u8;
-        self.current_write_addr = Some(write_addr + 1);
+        self.current_write_addr = Some(write_addr.wrapping_add(1));
     }
 
     pub fn write_u16<T: Into<Option<u16>>>(&mut self, addr: T, value: u16) {
@@ -155,8 +155,8 @@ impl Memory {
             }
         }
         self.data[write_addr as usize] = (value & 0x00FF) as u8;                // LB
-        self.data[(write_addr + 1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
-        self.current_write_addr = Some(write_addr + 2);
+        self.data[write_addr.wrapping_add(1) as usize] = ((value & 0xFF00) >> 8) as u8;   // HB
+        self.current_write_addr = Some(write_addr.wrapping_add(2));
     }
 
     pub fn dump(&self, addr: u16, bytes: u16) {
