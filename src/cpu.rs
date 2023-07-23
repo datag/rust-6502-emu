@@ -141,6 +141,16 @@ impl Cpu {
         STACK_BASE | addr as u16
     }
 
+    fn stack_push_u8(&mut self, mem: &mut Memory, value: u8) {
+        mem.write_u8(self.addr_stack(self.sp), value);
+        self.sp = self.sp.wrapping_sub(1);
+    }
+
+    fn stack_pop_u8(&mut self, mem: &mut Memory) -> u8 {
+        self.sp = self.sp.wrapping_add(1);
+        mem.read_u8(self.addr_stack(self.sp))
+    }
+
     fn addr_zpg(&self, addr: u8) -> u16 {
         ZERO_PAGE_BASE | (addr as u16)
     }
@@ -529,21 +539,20 @@ impl Cpu {
                     PHP => self.sr.union(StatusFlags::RESERVED | StatusFlags::B).bits(),    // SR will be pushed with the B flag and bit 5 set to 1
                     _ => panic!("Unhandled PH* opcode {:02X}", opcode),
                 };
-                mem.write_u8(self.addr_stack(self.sp), value);
-                self.sp = self.sp.wrapping_sub(1);
+                self.stack_push_u8(mem, value);
             },
 
             PLA => {
-                self.sp = self.sp.wrapping_add(1);
-                self.ac = mem.read_u8(self.addr_stack(self.sp));
+                let value = self.stack_pop_u8(mem);
+                self.ac = value;
 
                 self.sr.set(StatusFlags::Z, self.ac == 0);
                 self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
             },
 
             PLP => {
-                self.sp = self.sp.wrapping_add(1);
-                let mut ssr = StatusFlags::from_bits_truncate(mem.read_u8(self.addr_stack(self.sp)));
+                let value = self.stack_pop_u8(mem);
+                let mut ssr = StatusFlags::from_bits_truncate(value);
                 // SR will be pulled with the break flag and bit 5 ignored
                 ssr.set(StatusFlags::RESERVED, self.sr.contains(StatusFlags::RESERVED));
                 ssr.set(StatusFlags::B, self.sr.contains(StatusFlags::B));
