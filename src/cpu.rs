@@ -280,7 +280,48 @@ impl Cpu {
                 self.sr.set(StatusFlags::N, result & 0b10000000 != 0);
                 self.sr.set(StatusFlags::Z, result == 0);
                 self.ac = result;
-            }
+            },
+
+            CMP_IMM | CMP_ZPG | CMP_ZPX | CMP_ABS | CMP_ABX | CMP_ABY | CMP_IDX | CMP_IDY
+            | CPX_IMM | CPX_ZPG | CPX_ABS
+            | CPY_IMM | CPY_ZPG | CPY_ABS => {
+                // TODO: possible page crossing additional cycle for ZPX, ABX and ABY?
+
+                // TODO: BCD mode also for CMP/CPX/CPY?
+                if self.sr.contains(StatusFlags::D) {
+                    panic!("BCD mode not yet implemented");
+                }
+
+                let value;
+                if ins.addr_mode == AddressingMode::IMM {
+                    value = mem.read_u8(cur_addr)
+                } else {
+                    let addr = self.fetch_addr(mem, ins, cur_addr);
+                    value = mem.read_u8(addr);
+                }
+                println!("oper: 0x{:02X}", value);
+
+                let reg = match ins.mnemonic {
+                    Mnemonic::CMP => self.ac,
+                    Mnemonic::CPX => self.x,
+                    Mnemonic::CPY => self.y,
+                    _ => panic!("Unhandled mnemonic {:?}", ins.mnemonic),
+                };
+
+                if reg < value {
+                    self.sr.set(StatusFlags::Z, false);
+                    self.sr.set(StatusFlags::C, false);
+                    self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
+                } else if reg > value {
+                    self.sr.set(StatusFlags::Z, false);
+                    self.sr.set(StatusFlags::C, true);
+                    self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
+                } else /* reg == value */ {
+                    self.sr.set(StatusFlags::Z, true);
+                    self.sr.set(StatusFlags::C, true);
+                    self.sr.set(StatusFlags::N, false);
+                }
+            },
 
             JMP_ABS | JMP_IND => self.pc = self.fetch_addr(mem, ins, cur_addr),
 
@@ -346,6 +387,7 @@ impl Cpu {
             AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY
             | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
             | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
+                // TODO: additional cycles if page crossed
                 let value;
                 if ins.addr_mode == AddressingMode::IMM {
                     value = mem.read_u8(cur_addr)
@@ -774,16 +816,42 @@ mod tests {
             (SBC_IMM, 0x03, 0x00, true,  0x03, StatusFlags::RESERVED | StatusFlags::C),                      // test if carry is taken into account
             (SBC_IMM, 0xFF, 0x01, false, 0xFD, StatusFlags::RESERVED | StatusFlags::C | StatusFlags::N),
         ] {
-            let addr: u16 = 0x000A;
             cpu.reset(&mut mem);
             cpu.ac = ac;
             cpu.sr.set(StatusFlags::C, carry);
-            mem.write_u8(addr, value);
             mem.write_u8(ADDR_RESET_VECTOR, opcode);
             mem.write_u8(None, value);
             cpu.exec(&mut mem, 1);
             assert_eq!(cpu.ac, value_expect);
             assert_eq!(cpu.sr, sr_expect);
+        }
+    }
+
+    #[test]
+    fn ins_cmpcpxcpy() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [CMP_IMM, CPX_IMM, CPY_IMM] {
+            for (value_reg, value_imm, sr_expect) in [
+                (0x02, 0x01, StatusFlags::RESERVED | StatusFlags::C),
+                (0x01, 0x02, StatusFlags::RESERVED | StatusFlags::N),
+                (0x01, 0xFF, StatusFlags::RESERVED),
+                (0x0A, 0x0A, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            ] {
+                cpu.reset(&mut mem);
+
+                let ins = Instruction::from_opcode(opcode).unwrap();
+                match ins.mnemonic {
+                    Mnemonic::CMP => cpu.ac = value_reg,
+                    Mnemonic::CPX => cpu.x = value_reg,
+                    Mnemonic::CPY => cpu.y = value_reg,
+                    _ => panic!("Unhandled mnemonic for compare test {:?}", ins.mnemonic),
+                };
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(None, value_imm);
+                cpu.exec(&mut mem, 1);
+                assert_eq!(cpu.sr, sr_expect);
+            }
         }
     }
 
@@ -1068,7 +1136,6 @@ mod tests {
             (ROR_ZPG, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
             (ROR_ACC, 0x02, false, 0x01, StatusFlags::RESERVED),
             (ROR_ACC, 0x00, true,  0x80, StatusFlags::RESERVED | StatusFlags::N),
-
         ] {
             cpu.reset(&mut mem);
 

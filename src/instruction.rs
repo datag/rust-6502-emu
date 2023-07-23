@@ -21,6 +21,26 @@ pub const SBC_ABY: u8 = 0xF9;
 pub const SBC_IDX: u8 = 0xE1;
 pub const SBC_IDY: u8 = 0xF1;
 
+// CMP - Compare Memory with Accumulator
+pub const CMP_IMM: u8 = 0xC9;
+pub const CMP_ZPG: u8 = 0xC5;
+pub const CMP_ZPX: u8 = 0xD5;
+pub const CMP_ABS: u8 = 0xCD;
+pub const CMP_ABX: u8 = 0xDD;
+pub const CMP_ABY: u8 = 0xD9;
+pub const CMP_IDX: u8 = 0xC1;
+pub const CMP_IDY: u8 = 0xD1;
+
+// CPX Compare Memory and Index X
+pub const CPX_IMM: u8 = 0xE0;
+pub const CPX_ZPG: u8 = 0xE4;
+pub const CPX_ABS: u8 = 0xEC;
+
+// CPY Compare Memory and Index Y
+pub const CPY_IMM: u8 = 0xC0;
+pub const CPY_ZPG: u8 = 0xC4;
+pub const CPY_ABS: u8 = 0xCC;
+
 // Branches
 pub const BCC_REL: u8 = 0x90;   // BCC - Branch on Carry Clear
 pub const BCS_REL: u8 = 0xB0;   // BCS - Branch on Carry Set
@@ -214,6 +234,23 @@ impl Instruction {
             SBC_ABY => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
             SBC_IDX => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: IDX, bytes: 2, cycles: 6 }),
             SBC_IDY => Ok(Self { opcode, mnemonic: Mnemonic::SBC, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            CMP_IMM => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            CMP_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            CMP_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            CMP_ABS => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            CMP_ABX => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: ABX, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            CMP_ABY => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */ }),
+            CMP_IDX => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            CMP_IDY => Ok(Self { opcode, mnemonic: Mnemonic::CMP, addr_mode: IDY, bytes: 2, cycles: 5 /* +1 if page crossed */ }),
+
+            CPX_IMM => Ok(Self { opcode, mnemonic: Mnemonic::CPX, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            CPX_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::CPX, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            CPX_ABS => Ok(Self { opcode, mnemonic: Mnemonic::CPX, addr_mode: ABS, bytes: 3, cycles: 4 }),
+
+            CPY_IMM => Ok(Self { opcode, mnemonic: Mnemonic::CPY, addr_mode: IMM, bytes: 2, cycles: 2 }),
+            CPY_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::CPY, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            CPY_ABS => Ok(Self { opcode, mnemonic: Mnemonic::CPY, addr_mode: ABS, bytes: 3, cycles: 4 }),
 
             BCC_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCC, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),
             BCS_REL => Ok(Self { opcode, mnemonic: Mnemonic::BCS, addr_mode: REL, bytes: 2, cycles: 2 /* +1 if branch occurs on same page, +2 if on different page */}),

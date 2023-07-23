@@ -31,3 +31,4 @@
 * refactor: set ZN flags for value
 * address helper for tests
 * move most unit tests of cpu to integration tests?
+* handle page crossings in all ins resulting in additional cycles
