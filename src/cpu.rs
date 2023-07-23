@@ -6,6 +6,7 @@ use crate::mem::Memory;
 
 pub const VECTOR_RES: u16 = 0xFFFC;                     // 0xFFFC LB, 0xFFFF HB for reading reset vector address
 pub const STACK_BASE: u16 = 0x0100;                     // 0x0100 to 0x01FF
+pub const ZERO_PAGE_BASE: u16 = 0x0000;                      // 0x0000 to 0x00FF
 pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in memory; CPU starts with SP=0 and decrements 3x which is 0xFD
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
@@ -136,8 +137,12 @@ impl Cpu {
         }
     }
 
+    fn addr_stack(&self, addr: u8) -> u16 {
+        STACK_BASE | addr as u16
+    }
+
     fn addr_zpg(&self, addr: u8) -> u16 {
-        0x0000 | (addr as u16)
+        ZERO_PAGE_BASE | (addr as u16)
     }
 
     fn fetch_addr_zpg(&self, mem: &Memory, addr: u16) -> u16 {
@@ -145,7 +150,7 @@ impl Cpu {
     }
 
     fn addr_zpx(&self, addr: u8) -> u16 {
-        addr.wrapping_add(self.x) as u16      // wrap around zero page  (= without carry)
+        ZERO_PAGE_BASE | addr.wrapping_add(self.x) as u16      // wrap around zero page  (= without carry)
     }
 
     fn fetch_addr_zpx(&self, mem: &Memory, addr: u16) -> u16 {
@@ -153,7 +158,7 @@ impl Cpu {
     }
 
     fn addr_zpy(&self, addr: u8) -> u16 {
-        addr.wrapping_add(self.y) as u16      // wrap around zero page  (= without carry)
+        ZERO_PAGE_BASE | addr.wrapping_add(self.y) as u16      // wrap around zero page  (= without carry)
     }
 
     fn fetch_addr_zpy(&self, mem: &Memory, addr: u16) -> u16 {
@@ -193,7 +198,7 @@ impl Cpu {
     }
 
     fn addr_idx(&self, mem: &Memory, addr: u8) -> u16 {
-        mem.read_u16(addr.wrapping_add(self.x) as u16)
+        mem.read_u16(ZERO_PAGE_BASE | (addr.wrapping_add(self.x) as u16))
     }
 
     fn fetch_addr_idx(&self, mem: &Memory, addr: u16) -> u16 {
@@ -201,7 +206,7 @@ impl Cpu {
     }
 
     fn addr_idy(&self, mem: &Memory, addr: u8) -> u16 {
-        mem.read_u16(addr as u16).wrapping_add(self.y as u16)
+        mem.read_u16(ZERO_PAGE_BASE | addr as u16).wrapping_add(self.y as u16)
     }
 
     fn fetch_addr_idy(&self, mem: &Memory, addr: u16) -> u16 {
@@ -419,21 +424,21 @@ impl Cpu {
                     PHP => self.sr.union(StatusFlags::RESERVED | StatusFlags::B).bits(),    // SR will be pushed with the B flag and bit 5 set to 1
                     _ => panic!("Unhandled PH* opcode {:02X}", opcode),
                 };
-                mem.write_u8(STACK_BASE + self.sp as u16, value);
-                self.sp -= 1;
+                mem.write_u8(self.addr_stack(self.sp), value);
+                self.sp = self.sp.wrapping_sub(1);
             },
 
             PLA => {
-                self.sp += 1;
-                self.ac = mem.read_u8(STACK_BASE + self.sp as u16);
+                self.sp = self.sp.wrapping_add(1);
+                self.ac = mem.read_u8(self.addr_stack(self.sp));
 
                 self.sr.set(StatusFlags::Z, self.ac == 0);
                 self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
             },
 
             PLP => {
-                self.sp += 1;
-                let mut ssr = StatusFlags::from_bits_truncate(mem.read_u8(STACK_BASE + self.sp as u16));
+                self.sp = self.sp.wrapping_add(1);
+                let mut ssr = StatusFlags::from_bits_truncate(mem.read_u8(self.addr_stack(self.sp)));
                 // SR will be pulled with the break flag and bit 5 ignored
                 ssr.set(StatusFlags::RESERVED, self.sr.contains(StatusFlags::RESERVED));
                 ssr.set(StatusFlags::B, self.sr.contains(StatusFlags::B));
@@ -1189,7 +1194,7 @@ mod tests {
 
         cpu.exec(&mut mem, 1);
 
-        assert_eq!(value, mem.read_u8(STACK_BASE + sp_orig as u16));
+        assert_eq!(value, mem.read_u8(cpu.addr_stack(sp_orig)));
         assert_eq!(cpu.sp, sp_orig - 1);
     }
 
@@ -1205,7 +1210,7 @@ mod tests {
 
         cpu.exec(&mut mem, 1);
 
-        assert_eq!((StatusFlags::RESERVED | StatusFlags::B | srf).bits(), mem.read_u8(STACK_BASE + sp_orig as u16));
+        assert_eq!((StatusFlags::RESERVED | StatusFlags::B | srf).bits(), mem.read_u8(cpu.addr_stack(sp_orig)));
         assert_eq!(cpu.sp, sp_orig - 1);
     }
 
@@ -1219,7 +1224,7 @@ mod tests {
             cpu.sp = 0x0A;
             let sp_orig = cpu.sp;
 
-            mem.write_u8(STACK_BASE + cpu.sp as u16 + 1, value);
+            mem.write_u8(cpu.addr_stack(cpu.sp + 1), value);
     
             mem.write_u8(ADDR_RESET_VECTOR, PLA);
     
@@ -1238,7 +1243,7 @@ mod tests {
         
         let srf = StatusFlags::default() | StatusFlags::C;
         cpu.sp = 0x0A;
-        mem.write_u8(STACK_BASE + cpu.sp as u16 + 1, srf.bits());
+        mem.write_u8(cpu.addr_stack(cpu.sp + 1), srf.bits());
         
         let sp_orig = cpu.sp;
 
