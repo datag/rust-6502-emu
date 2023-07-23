@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Error};
 
 use crate::cpu;
+use crate::instruction::{JSR_ABS, NOP};
 
 const MEMORY_SIZE: usize = 0xFFFF;
 
@@ -60,9 +61,9 @@ impl Memory {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
 
-        // ADC #1
-        self.write_u8(ADDR_RESET_VECTOR, 0x69);
-        self.write_u8(None, 0x01);
+        // // ADC #1
+        // self.write_u8(ADDR_RESET_VECTOR, 0x69);
+        // self.write_u8(None, 0x01);
 
         // // ADC #FF
         // self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
@@ -93,6 +94,10 @@ impl Memory {
         // // some other instruction
         // self.write_u8(ADDR_RESET_VECTOR + 4, crate::instruction::ADC_IMM);
         // self.write_u8(ADDR_RESET_VECTOR + 5, 0x02);
+
+        self.write_u8(ADDR_RESET_VECTOR, JSR_ABS);
+        self.write_u16(None, 0xABCD);
+        self.write_u8(0xABCD, NOP);
 
     }
 

@@ -146,9 +146,19 @@ impl Cpu {
         self.sp = self.sp.wrapping_sub(1);
     }
 
+    fn stack_push_u16(&mut self, mem: &mut Memory, value: u16) {
+        mem.write_u16(self.addr_stack(self.sp), value);
+        self.sp = self.sp.wrapping_sub(2);
+    }
+
     fn stack_pop_u8(&mut self, mem: &mut Memory) -> u8 {
         self.sp = self.sp.wrapping_add(1);
         mem.read_u8(self.addr_stack(self.sp))
+    }
+
+    fn stack_pop_u16(&mut self, mem: &mut Memory) -> u16 {
+        self.sp = self.sp.wrapping_add(2);
+        mem.read_u16(self.addr_stack(self.sp))
     }
 
     fn addr_zpg(&self, addr: u8) -> u16 {
@@ -334,6 +344,16 @@ impl Cpu {
             },
 
             JMP_ABS | JMP_IND => self.pc = self.fetch_addr(mem, ins, cur_addr),
+
+            JSR_ABS => {
+                self.stack_push_u16(mem, self.pc - ins.bytes as u16 + 2);      // previous PC + 2
+                self.pc = self.fetch_addr_abs(mem, cur_addr);
+            },
+
+            RTS => {
+                let addr = self.stack_pop_u16(mem);
+                self.pc = addr + 1;
+            },
 
             BIT_ZPG | BIT_ABS => {
                 let addr = self.fetch_addr(mem, ins, cur_addr);
@@ -627,6 +647,24 @@ mod tests {
         assert_eq!(cpu.pc, ADDR_RESET_VECTOR);      // ensures working memory as well
 
         assert_eq!(cpu.cycles, CYCLES_AFTER_RESET);
+    }
+
+    #[test]
+    fn addr_stack() {
+        let (cpu, _) = setup();
+
+        assert_eq!(cpu.addr_stack(0xCD), STACK_BASE | 0xCD);
+    }
+
+    #[test]
+    fn stack() {
+        let (mut cpu, mut mem) = setup();
+
+        cpu.stack_push_u8(&mut mem, 0xAA);
+        assert_eq!(cpu.stack_pop_u8(&mut mem), 0xAA);
+
+        cpu.stack_push_u16(&mut mem, 0xABCD);
+        assert_eq!(cpu.stack_pop_u16(&mut mem), 0xABCD);
     }
 
     #[test]
@@ -1457,5 +1495,32 @@ mod tests {
 
         assert_eq!(cpu.sp, sp_orig + 1);
         assert_eq!(cpu.sr, srf | StatusFlags::B);       // B should still be set
+    }
+
+    #[test]
+    fn ins_jsrrts() {
+        let (mut cpu, mut mem) = setup();
+
+        let addr: u16 = 0xABCD;
+        let sp_orig = cpu.sp;
+
+        mem.write_u8(ADDR_RESET_VECTOR, JSR_ABS);
+        mem.write_u16(None, addr);
+        mem.write_u8(None, NOP);       // next instruction
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(cpu.pc, addr);
+        assert_eq!(cpu.sp, sp_orig - 2 /* 16 bit addr */);
+        assert_eq!(mem.read_u16(cpu.addr_stack(cpu.sp+ 2)), ADDR_RESET_VECTOR + 2);
+
+
+        let sp_orig = cpu.sp;
+        mem.write_u8(addr, RTS);
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(cpu.pc, ADDR_RESET_VECTOR + 3 /* after JSR instruction at NOP */);
+        assert_eq!(cpu.sp, sp_orig + 2 /* 16 bit addr */);
     }
 }

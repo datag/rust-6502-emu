@@ -146,6 +146,9 @@ pub const DEY: u8 = 0x88;   // DEY - Decrement Index Y by One
 pub const JMP_ABS: u8 = 0x4C;
 pub const JMP_IND: u8 = 0x6C;
 
+pub const JSR_ABS: u8 = 0x20;
+pub const RTS: u8 = 0x60;
+
 // LDA - Load Accumulator with Memory
 pub const LDA_IMM: u8 = 0xA9;
 pub const LDA_ZPG: u8 = 0xA5;
@@ -341,6 +344,9 @@ impl Instruction {
 
             JMP_ABS => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: ABS, bytes: 3, cycles: 3 }),
             JMP_IND => Ok(Self { opcode, mnemonic: Mnemonic::JMP, addr_mode: IND, bytes: 3, cycles: 5 }),
+
+            JSR_ABS => Ok(Self { opcode, mnemonic: Mnemonic::JSR, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            RTS     => Ok(Self { opcode, mnemonic: Mnemonic::RTS, addr_mode: IMP, bytes: 1, cycles: 6 }),
 
             LDA_IMM => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: IMM, bytes: 2, cycles: 2 }),
             LDA_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::LDA, addr_mode: ZPG, bytes: 2, cycles: 3 }),
