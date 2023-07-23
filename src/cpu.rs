@@ -390,6 +390,29 @@ impl Cpu {
                 mem.write_u8(addr, value);
             },
 
+            TAX | TAY | TSX | TXA | TXS | TYA => {
+                let value = match ins.opcode {
+                    TAY | TAX => self.ac,
+                    TXA | TXS => self.x,
+                    TYA       => self.y,
+                    TSX       => self.sp,
+                    _ => panic!("Unhandled T** opcpde {:02X}", opcode),
+                };
+
+                match ins.opcode {
+                    TXA | TYA => self.ac = value,
+                    TAX | TSX => self.x = value,
+                    TAY       => self.y = value,
+                    TXS       => self.sp = value,
+                    _ => panic!("Unhandled T** opcpde {:02X}", opcode),
+                };
+
+                if opcode != TXS {      // no setting SR N/Z flags for TXS
+                    self.sr.set(StatusFlags::Z, value == 0);
+                    self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
+                }
+            },
+
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
         }
 
@@ -1077,13 +1100,53 @@ mod tests {
 
                 cpu.exec(&mut mem, 1);
 
-                let read_value = match ins.addr_mode {
+                let value_read = match ins.addr_mode {
                     AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::ABS | AddressingMode::ABX | AddressingMode::ABY => mem.read_u8(addr),
                     AddressingMode::IDX | AddressingMode::IDY => mem.read_u8(addr + 2),
                     _ => panic!("Unhandled addressing mode {}", ins.addr_mode),
                 };
 
-                assert_eq!(value, read_value);
+                assert_eq!(value, value_read);
+        }
+    }
+
+    #[test]
+    fn ins_txx() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [TAX, TAY, TSX, TXA, TXS, TYA] {
+            for (value, sr_expect) in [
+                (0x00, StatusFlags::RESERVED | StatusFlags::Z),
+                (0x01, StatusFlags::RESERVED),
+                (0xF0, StatusFlags::RESERVED | StatusFlags::N),
+            ] {
+                cpu.reset(&mut mem);
+
+                match opcode {
+                    TAX | TAY => cpu.ac = value,
+                    TXA | TXS => cpu.x = value,
+                    TYA       => cpu.y = value,
+                    TSX       => cpu.sp = value,
+                    _ => panic!("Unhandled T** opcode {:02X}", opcode),
+                };
+
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+
+                cpu.exec(&mut mem, 1);
+
+                let value_read = match opcode {
+                    TXA | TYA => cpu.ac,
+                    TAX | TSX => cpu.x,
+                    TAY       => cpu.y,
+                    TXS       => cpu.sp,
+                    _ => panic!("Unhandled T** opcode {:02X}", opcode),
+                };
+                
+                assert_eq!(value, value_read);
+                if opcode != TXS {
+                    assert_eq!(cpu.sr, sr_expect);
+                }
+            }
         }
     }
 }

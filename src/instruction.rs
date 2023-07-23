@@ -141,6 +141,14 @@ pub const STY_ZPG: u8 = 0x84;
 pub const STY_ZPX: u8 = 0x94;
 pub const STY_ABS: u8 = 0x8C;
 
+// Interregister transfer
+pub const TAX: u8 = 0xAA;
+pub const TAY: u8 = 0xA8;
+pub const TSX: u8 = 0xBA;
+pub const TXA: u8 = 0x8A;
+pub const TXS: u8 = 0x9A;
+pub const TYA: u8 = 0x98;
+
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
@@ -275,6 +283,13 @@ impl Instruction {
             STY_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ZPG, bytes: 2, cycles: 3 }),
             STY_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ZPX, bytes: 2, cycles: 4 }),
             STY_ABS => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ABS, bytes: 3, cycles: 4 }),
+
+            TAX     => Ok(Self { opcode, mnemonic: Mnemonic::TAX, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            TAY     => Ok(Self { opcode, mnemonic: Mnemonic::TAY, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            TSX     => Ok(Self { opcode, mnemonic: Mnemonic::TSX, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            TXA     => Ok(Self { opcode, mnemonic: Mnemonic::TXA, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            TXS     => Ok(Self { opcode, mnemonic: Mnemonic::TXS, addr_mode: IMP, bytes: 1, cycles: 2 }),
+            TYA     => Ok(Self { opcode, mnemonic: Mnemonic::TYA, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 
