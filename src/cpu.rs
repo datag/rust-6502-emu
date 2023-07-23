@@ -223,7 +223,6 @@ impl Cpu {
 
     fn fetch_addr(&self, mem: &Memory, ins: &Instruction, addr: u16) -> u16 {
         match ins.addr_mode {
-            AddressingMode::IMM => addr,
             AddressingMode::ZPG => self.fetch_addr_zpg(mem, addr),
             AddressingMode::ZPX => self.fetch_addr_zpx(mem, addr),
             AddressingMode::ZPY => self.fetch_addr_zpy(mem, addr),
@@ -253,8 +252,13 @@ impl Cpu {
                     panic!("BCD mode not yet implemented");
                 }
 
-                let addr = self.fetch_addr(mem, ins, cur_addr);
-                let value: u8 = mem.read_u8(addr);
+                let value;
+                if ins.addr_mode == AddressingMode::IMM {
+                    value = mem.read_u8(cur_addr)
+                } else {
+                    let addr = self.fetch_addr(mem, ins, cur_addr);
+                    value = mem.read_u8(addr);
+                }
                 println!("oper: 0x{:02X}", value);
 
                 let result: u8;
@@ -292,10 +296,14 @@ impl Cpu {
             AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY
             | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
             | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
-                let addr = self.fetch_addr(mem, ins, cur_addr);
-            
-                let value: u8 = mem.read_u8(addr);
-                println!("oper: 0x{:02X} @{:04X}", value, addr);
+                let value;
+                if ins.addr_mode == AddressingMode::IMM {
+                    value = mem.read_u8(cur_addr)
+                } else {
+                    let addr = self.fetch_addr(mem, ins, cur_addr);
+                    value = mem.read_u8(addr);
+                }
+                println!("oper: 0x{:02X}", value);
 
                 self.ac = match ins.mnemonic {
                     Mnemonic::AND => self.ac & value,
@@ -367,8 +375,13 @@ impl Cpu {
             | LDX_IMM | LDX_ZPG | LDX_ZPY | LDX_ABS | LDX_ABY
             | LDY_IMM | LDY_ZPG | LDY_ZPY | LDY_ABS | LDY_ABY => {
                 // TODO: possible page crossing additional cycle for LDA: ABX, ABY and IDX  and LDX/LDY: ABX?
-                let addr = self.fetch_addr(mem, ins, cur_addr);
-                let value: u8 = mem.read_u8(addr);
+                let value;
+                if ins.addr_mode == AddressingMode::IMM {
+                    value = mem.read_u8(cur_addr)
+                } else {
+                    let addr = self.fetch_addr(mem, ins, cur_addr);
+                    value = mem.read_u8(addr);
+                }
                 println!("oper: 0x{:02X}", value);
 
                 match ins.mnemonic {
