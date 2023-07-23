@@ -22,6 +22,8 @@
 
 ## TODO
 
+* sort instructions by type
+* refactor opcode constants into enum?
 * merge tests (e.g. AND + EOR + ORA)
 * logging
 * map ROM

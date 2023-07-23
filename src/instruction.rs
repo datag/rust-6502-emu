@@ -122,6 +122,25 @@ pub const LDY_ZPY: u8 = 0xB4;
 pub const LDY_ABS: u8 = 0xAC;
 pub const LDY_ABY: u8 = 0xBC;
 
+// STA - Store Accumulator in Memory
+pub const STA_ZPG: u8 = 0x85;
+pub const STA_ZPX: u8 = 0x95;
+pub const STA_ABS: u8 = 0x8D;
+pub const STA_ABX: u8 = 0x9D;
+pub const STA_ABY: u8 = 0x99;
+pub const STA_IDX: u8 = 0x81;
+pub const STA_IDY: u8 = 0x91;
+
+// STX - Store Index X in Memory
+pub const STX_ZPG: u8 = 0x86;
+pub const STX_ZPY: u8 = 0x96;
+pub const STX_ABS: u8 = 0x8E;
+
+// STY - Store Index Y in Memory
+pub const STY_ZPG: u8 = 0x84;
+pub const STY_ZPX: u8 = 0x94;
+pub const STY_ABS: u8 = 0x8C;
+
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
@@ -240,6 +259,22 @@ impl Instruction {
             LDY_ZPY => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ZPY, bytes: 2, cycles: 4 }),
             LDY_ABS => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ABS, bytes: 3, cycles: 4 }),
             LDY_ABY => Ok(Self { opcode, mnemonic: Mnemonic::LDY, addr_mode: ABY, bytes: 3, cycles: 4 /* +1 if page crossed */  }),
+
+            STA_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            STA_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            STA_ABS => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: ABS, bytes: 3, cycles: 4 }),
+            STA_ABX => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: ABX, bytes: 3, cycles: 5 }),
+            STA_ABY => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: ABY, bytes: 3, cycles: 5 }),
+            STA_IDX => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: IDX, bytes: 2, cycles: 6 }),
+            STA_IDY => Ok(Self { opcode, mnemonic: Mnemonic::STA, addr_mode: IDY, bytes: 2, cycles: 6 }),
+
+            STX_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::STX, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            STX_ZPY => Ok(Self { opcode, mnemonic: Mnemonic::STX, addr_mode: ZPY, bytes: 2, cycles: 4 }),
+            STX_ABS => Ok(Self { opcode, mnemonic: Mnemonic::STX, addr_mode: ABS, bytes: 3, cycles: 4 }),
+
+            STY_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ZPG, bytes: 2, cycles: 3 }),
+            STY_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ZPX, bytes: 2, cycles: 4 }),
+            STY_ABS => Ok(Self { opcode, mnemonic: Mnemonic::STY, addr_mode: ABS, bytes: 3, cycles: 4 }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 

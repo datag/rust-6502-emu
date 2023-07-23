@@ -370,11 +370,24 @@ impl Cpu {
                     Mnemonic::LDA => self.ac = value,
                     Mnemonic::LDX => self.x = value,
                     Mnemonic::LDY => self.y = value,
-                    _ => panic!("Undefined LD* opcode {:02X}", opcode),
+                    _ => panic!("Unhandled LD* opcode {:02X}", opcode),
                 }
 
                 self.sr.set(StatusFlags::Z, value == 0);
                 self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
+            },
+
+            STA_ZPG | STA_ZPX | STA_ABS | STA_ABX | STA_ABY | STA_IDX | STA_IDY
+             | STX_ZPG | STX_ZPY | STX_ABS
+             | STY_ZPG | STY_ZPX | STY_ABS => {
+                let addr = self.fetch_addr(mem, ins, cur_addr);
+                let value = match ins.mnemonic {
+                    Mnemonic::STA => self.ac,
+                    Mnemonic::STX => self.x,
+                    Mnemonic::STY => self.y,
+                    _ => panic!("Unhandled ST* opcpde {:02X}", opcode),
+                };
+                mem.write_u8(addr, value);
             },
 
             _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
@@ -1023,6 +1036,54 @@ mod tests {
                 assert_eq!(value_reg, value);
                 assert_eq!(cpu.sr, sr_expect);
             }
+        }
+    }
+
+    #[test]
+    fn ins_stastxsty() {
+        let (mut cpu, mut mem) = setup();
+
+        for opcode in [
+                STA_ZPG, STA_ZPX, STA_ABS, STA_ABX, STA_ABY, STA_IDY, STA_IDY,
+                STX_ZPG, STX_ZPY, STX_ABS,
+                STY_ZPG, STY_ZPX, STY_ABS,
+            ] {
+                cpu.reset(&mut mem);
+
+                let ins = Instruction::from_opcode(opcode).unwrap();
+                let addr: u16 = 0x000A;
+                let value: u8 = 0xBB;
+
+                match ins.mnemonic {
+                    Mnemonic::STA => cpu.ac = value,
+                    Mnemonic::STX => cpu.x = value,
+                    Mnemonic::STY => cpu.y = value,
+                    _ => panic!("Unhandled test case ST* {:02X}", opcode),
+                };
+
+                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                
+                if ins.addr_mode == AddressingMode::IMM {
+                    mem.write_u8(None, value);
+                } else if matches!(ins.addr_mode, AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::IDX | AddressingMode::IDY) {
+                    mem.write_u8(None, (addr & 0xFF) as u8);
+
+                    if matches!(ins.addr_mode, AddressingMode::IDX | AddressingMode::IDY) {
+                        mem.write_u16(addr, addr + 2);  // write indirect address
+                    }
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                cpu.exec(&mut mem, 1);
+
+                let read_value = match ins.addr_mode {
+                    AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::ABS | AddressingMode::ABX | AddressingMode::ABY => mem.read_u8(addr),
+                    AddressingMode::IDX | AddressingMode::IDY => mem.read_u8(addr + 2),
+                    _ => panic!("Unhandled addressing mode {}", ins.addr_mode),
+                };
+
+                assert_eq!(value, read_value);
         }
     }
 }
