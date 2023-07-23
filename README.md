@@ -14,6 +14,8 @@
 * https://sta.c64.org/cbm64mem.html
 * https://www.nesdev.org/wiki/Status_flags
 * https://www.pagetable.com/?p=410
+* https://en.wikibooks.org/wiki/6502_Assembly
+* https://codeburst.io/running-programs-on-the-apple-ii-cc183aab268
 
 ## Tools
 
