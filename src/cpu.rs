@@ -293,6 +293,56 @@ impl Cpu {
                 self.sr.set(StatusFlags::Z, value & self.ac == 0);                  // result of operand and AC
             },
 
+            ASL_ACC | ASL_ZPG | ASL_ZPX | ASL_ABS | ASL_ABX
+            | LSR_ACC | LSR_ZPG | LSR_ZPX | LSR_ABS | LSR_ABX
+            | ROL_ACC | ROL_ZPG | ROL_ZPX | ROL_ABS | ROL_ABX
+            | ROR_ACC | ROR_ZPG | ROR_ZPX | ROR_ABS | ROR_ABX => {
+                let addr;
+                let mut value;
+                if ins.addr_mode == AddressingMode::ACC {
+                    addr = cur_addr;    // unused
+                    value = self.ac;
+                } else {
+                    addr = self.fetch_addr(mem, ins, cur_addr);
+                    value = mem.read_u8(addr);
+                }
+                println!("oper: 0x{:02X}", value);
+
+                let carry_orig: bool = self.sr.contains(StatusFlags::C);
+
+                match opcode {
+                    ASL_ACC | ASL_ZPG | ASL_ZPX | ASL_ABS | ASL_ABX | ROL_ACC | ROL_ZPG | ROL_ZPX | ROL_ABS | ROL_ABX => {
+                        self.sr.set(StatusFlags::C, value & 0b10000000 != 0);
+                        value <<= 1;
+                    }
+                    LSR_ACC | LSR_ZPG | LSR_ZPX | LSR_ABS | LSR_ABX | ROR_ACC | ROR_ZPG | ROR_ZPX | ROR_ABS | ROR_ABX => {
+                        self.sr.set(StatusFlags::C, value & 0b00000001 != 0);
+                        value >>= 1;
+                    },
+                    _ => panic!("Unhandled shift/rotate opcode {:02X}", opcode),
+                };
+
+                // for rotate instruction the previous carry bit shifts in
+                match opcode {
+                    ROL_ACC | ROL_ZPG | ROL_ZPX | ROL_ABS | ROL_ABX => {
+                        value |= if carry_orig { 0b00000001 } else { 0 }
+                    }
+                    ROR_ACC | ROR_ZPG | ROR_ZPX | ROR_ABS | ROR_ABX => {
+                        value |= if carry_orig { 0b10000000 } else { 0 }
+                    },
+                    _ => {},
+                };
+
+                self.sr.set(StatusFlags::N, value & 0b10000000 != 0);
+                self.sr.set(StatusFlags::Z, value == 0);
+
+                if ins.addr_mode == AddressingMode::ACC {
+                    self.ac = value
+                } else {
+                    mem.write_u8(addr, value)
+                }
+            },
+
             AND_IMM | AND_ZPG | AND_ZPX | AND_ABS | AND_ABX | AND_ABY | AND_IDX | AND_IDY
             | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
             | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
@@ -983,6 +1033,69 @@ mod tests {
                 }
                 assert_eq!(cpu.cycles - cycles_orig, expected_cycles);
             }
+        }
+    }
+
+    #[test]
+    fn ins_asllsrrolror() {
+        let (mut cpu, mut mem) = setup();
+
+        for (opcode, value, carry, value_expect, sr_expect) in [
+            (ASL_ACC, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ASL_ZPG, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ASL_ACC, 0x80, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ASL_ZPG, 0x80, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ASL_ACC, 0x01, false, 0x02, StatusFlags::RESERVED),
+            (ASL_ACC, 0x40, false, 0x80, StatusFlags::RESERVED | StatusFlags::N),
+
+            (LSR_ACC, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (LSR_ZPG, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (LSR_ACC, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (LSR_ZPG, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (LSR_ACC, 0x02, false, 0x01, StatusFlags::RESERVED),
+
+            (ROL_ACC, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ROL_ZPG, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ROL_ACC, 0x80, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ROL_ZPG, 0x80, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ROL_ACC, 0x01, false, 0x02, StatusFlags::RESERVED),
+            (ROL_ACC, 0x40, false, 0x80, StatusFlags::RESERVED | StatusFlags::N),
+            (ROL_ACC, 0x00, true,  0x01, StatusFlags::RESERVED),
+
+            (ROR_ACC, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ROR_ZPG, 0x00, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z),
+            (ROR_ACC, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ROR_ZPG, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::Z | StatusFlags::C),
+            (ROR_ACC, 0x02, false, 0x01, StatusFlags::RESERVED),
+            (ROR_ACC, 0x00, true,  0x80, StatusFlags::RESERVED | StatusFlags::N),
+
+        ] {
+            cpu.reset(&mut mem);
+
+            let ins = Instruction::from_opcode(opcode).unwrap();
+            
+            let addr: u16 = 0xA;
+            mem.write_u8(ADDR_RESET_VECTOR, opcode);
+            if ins.addr_mode == AddressingMode::ACC {
+                cpu.ac = value;
+            } else {
+                if matches!(ins.addr_mode, AddressingMode::ZPG | AddressingMode::ZPX) {
+                    mem.write_u8(None, addr as u8);
+                } else {
+                    mem.write_u16(None, addr);
+                }
+
+                mem.write_u8(addr, value);
+            }
+
+            cpu.sr.set(StatusFlags::C, carry);
+
+            cpu.exec(&mut mem, 1);
+
+            let value_read = if ins.addr_mode == AddressingMode::ACC { cpu.ac } else { mem.read_u8(addr) };
+
+            assert_eq!(value_read, value_expect);
+            assert_eq!(cpu.sr, sr_expect);
         }
     }
 

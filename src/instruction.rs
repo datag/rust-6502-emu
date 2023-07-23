@@ -35,6 +35,34 @@ pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
 pub const BIT_ZPG: u8 = 0x24;
 pub const BIT_ABS: u8 = 0x2C;
 
+// ASL - Shift Left One Bit (Memory or Accumulator)
+pub const ASL_ACC: u8 = 0x0A;
+pub const ASL_ZPG: u8 = 0x06;
+pub const ASL_ZPX: u8 = 0x16;
+pub const ASL_ABS: u8 = 0x0E;
+pub const ASL_ABX: u8 = 0x1E;
+
+// LSR -  Shift One Bit Right (Memory or Accumulator)
+pub const LSR_ACC: u8 = 0x4A;
+pub const LSR_ZPG: u8 = 0x46;
+pub const LSR_ZPX: u8 = 0x56;
+pub const LSR_ABS: u8 = 0x4E;
+pub const LSR_ABX: u8 = 0x5E;
+
+// ROL - Rotate One Bit Left (Memory or Accumulator)
+pub const ROL_ACC: u8 = 0x2A;
+pub const ROL_ZPG: u8 = 0x26;
+pub const ROL_ZPX: u8 = 0x36;
+pub const ROL_ABS: u8 = 0x2E;
+pub const ROL_ABX: u8 = 0x3E;
+
+// ROR - Rotate One Bit Right (Memory or Accumulator)
+pub const ROR_ACC: u8 = 0x6A;
+pub const ROR_ZPG: u8 = 0x66;
+pub const ROR_ZPX: u8 = 0x76;
+pub const ROR_ABS: u8 = 0x6E;
+pub const ROR_ABX: u8 = 0x7E;
+
 // AND - AND Memory with Accumulator
 pub const AND_IMM: u8 = 0x29;
 pub const AND_ZPG: u8 = 0x25;
@@ -198,6 +226,30 @@ impl Instruction {
 
             BIT_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: ZPG, bytes: 2, cycles: 3 }),
             BIT_ABS => Ok(Self { opcode, mnemonic: Mnemonic::BIT, addr_mode: ABS, bytes: 3, cycles: 4 }),
+
+            ASL_ACC => Ok(Self { opcode, mnemonic: Mnemonic::ASL, addr_mode: ACC, bytes: 1, cycles: 2 }),
+            ASL_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ASL, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            ASL_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::ASL, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            ASL_ABS => Ok(Self { opcode, mnemonic: Mnemonic::ASL, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            ASL_ABX => Ok(Self { opcode, mnemonic: Mnemonic::ASL, addr_mode: ABX, bytes: 3, cycles: 7 }),
+
+            LSR_ACC => Ok(Self { opcode, mnemonic: Mnemonic::LSR, addr_mode: ACC, bytes: 1, cycles: 2 }),
+            LSR_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::LSR, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            LSR_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::LSR, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            LSR_ABS => Ok(Self { opcode, mnemonic: Mnemonic::LSR, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            LSR_ABX => Ok(Self { opcode, mnemonic: Mnemonic::LSR, addr_mode: ABX, bytes: 3, cycles: 7 }),
+
+            ROL_ACC => Ok(Self { opcode, mnemonic: Mnemonic::ROL, addr_mode: ACC, bytes: 1, cycles: 2 }),
+            ROL_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ROL, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            ROL_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::ROL, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            ROL_ABS => Ok(Self { opcode, mnemonic: Mnemonic::ROL, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            ROL_ABX => Ok(Self { opcode, mnemonic: Mnemonic::ROL, addr_mode: ABX, bytes: 3, cycles: 7 }),
+
+            ROR_ACC => Ok(Self { opcode, mnemonic: Mnemonic::ROR, addr_mode: ACC, bytes: 1, cycles: 2 }),
+            ROR_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ROR, addr_mode: ZPG, bytes: 2, cycles: 5 }),
+            ROR_ZPX => Ok(Self { opcode, mnemonic: Mnemonic::ROR, addr_mode: ZPX, bytes: 2, cycles: 6 }),
+            ROR_ABS => Ok(Self { opcode, mnemonic: Mnemonic::ROR, addr_mode: ABS, bytes: 3, cycles: 6 }),
+            ROR_ABX => Ok(Self { opcode, mnemonic: Mnemonic::ROR, addr_mode: ABX, bytes: 3, cycles: 7 }),
 
             AND_IMM => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: IMM, bytes: 2, cycles: 2 }),
             AND_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::AND, addr_mode: ZPG, bytes: 2, cycles: 3 }),
