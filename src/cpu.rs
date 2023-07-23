@@ -385,7 +385,7 @@ impl Cpu {
                     Mnemonic::STA => self.ac,
                     Mnemonic::STX => self.x,
                     Mnemonic::STY => self.y,
-                    _ => panic!("Unhandled ST* opcpde {:02X}", opcode),
+                    _ => panic!("Unhandled ST* opcode {:02X}", opcode),
                 };
                 mem.write_u8(addr, value);
             },
@@ -396,7 +396,7 @@ impl Cpu {
                     TXA | TXS => self.x,
                     TYA       => self.y,
                     TSX       => self.sp,
-                    _ => panic!("Unhandled T** opcpde {:02X}", opcode),
+                    _ => panic!("Unhandled T** opcode {:02X}", opcode),
                 };
 
                 match ins.opcode {
@@ -404,7 +404,7 @@ impl Cpu {
                     TAX | TSX => self.x = value,
                     TAY       => self.y = value,
                     TXS       => self.sp = value,
-                    _ => panic!("Unhandled T** opcpde {:02X}", opcode),
+                    _ => panic!("Unhandled T** opcode {:02X}", opcode),
                 };
 
                 if opcode != TXS {      // no setting SR N/Z flags for TXS
@@ -413,7 +413,34 @@ impl Cpu {
                 }
             },
 
-            _ => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, cur_addr - 1),
+            PHA | PHP => {
+                let value = match opcode {
+                    PHA => self.ac,
+                    PHP => self.sr.union(StatusFlags::RESERVED | StatusFlags::B).bits(),    // SR will be pushed with the B flag and bit 5 set to 1
+                    _ => panic!("Unhandled PH* opcode {:02X}", opcode),
+                };
+                mem.write_u8(STACK_BASE + self.sp as u16, value);
+                self.sp -= 1;
+            },
+
+            PLA => {
+                self.sp += 1;
+                self.ac = mem.read_u8(STACK_BASE + self.sp as u16);
+
+                self.sr.set(StatusFlags::Z, self.ac == 0);
+                self.sr.set(StatusFlags::N, self.ac & 0b10000000 != 0);
+            },
+
+            PLP => {
+                self.sp += 1;
+                let mut ssr = StatusFlags::from_bits_truncate(mem.read_u8(STACK_BASE + self.sp as u16));
+                // SR will be pulled with the break flag and bit 5 ignored
+                ssr.set(StatusFlags::RESERVED, self.sr.contains(StatusFlags::RESERVED));
+                ssr.set(StatusFlags::B, self.sr.contains(StatusFlags::B));
+                self.sr = ssr;
+            },
+
+            _ => panic!("Unimplemented or invalid instruction {:02X} @{:04X}", opcode, cur_addr - 1 /* current read addr minus opcode byte */),
         }
 
         cycles_additional
@@ -1148,5 +1175,80 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn ins_pha() {
+        let (mut cpu, mut mem) = setup();
+
+        let value: u8 = 0xAA;
+        let sp_orig = cpu.sp;
+        cpu.ac = value;
+
+        mem.write_u8(ADDR_RESET_VECTOR, PHA);
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(value, mem.read_u8(STACK_BASE + sp_orig as u16));
+        assert_eq!(cpu.sp, sp_orig - 1);
+    }
+
+    #[test]
+    fn ins_php() {
+        let (mut cpu, mut mem) = setup();
+
+        let sp_orig = cpu.sp;
+        let srf = StatusFlags::C;
+        cpu.sr.set(srf, true);
+
+        mem.write_u8(ADDR_RESET_VECTOR, PHP);
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!((StatusFlags::RESERVED | StatusFlags::B | srf).bits(), mem.read_u8(STACK_BASE + sp_orig as u16));
+        assert_eq!(cpu.sp, sp_orig - 1);
+    }
+
+    #[test]
+    fn ins_pla() {
+        let (mut cpu, mut mem) = setup();
+
+        for value in [0x00, 0x01, 0xF0] {
+            cpu.reset(&mut mem);
+    
+            cpu.sp = 0x0A;
+            let sp_orig = cpu.sp;
+
+            mem.write_u8(STACK_BASE + cpu.sp as u16 + 1, value);
+    
+            mem.write_u8(ADDR_RESET_VECTOR, PLA);
+    
+            cpu.exec(&mut mem, 1);
+    
+            assert_eq!(value, cpu.ac);
+            assert_eq!(cpu.sp, sp_orig + 1);
+            assert_eq!(cpu.sr.contains(StatusFlags::Z), value == 0);
+            assert_eq!(cpu.sr.contains(StatusFlags::N), value & 0b10000000 != 0);
+        }
+    }
+
+    #[test]
+    fn ins_plp() {
+        let (mut cpu, mut mem) = setup();
+        
+        let srf = StatusFlags::default() | StatusFlags::C;
+        cpu.sp = 0x0A;
+        mem.write_u8(STACK_BASE + cpu.sp as u16 + 1, srf.bits());
+        
+        let sp_orig = cpu.sp;
+
+        cpu.sr.set(StatusFlags::B, true);
+
+        mem.write_u8(ADDR_RESET_VECTOR, PLP);
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(cpu.sp, sp_orig + 1);
+        assert_eq!(cpu.sr, srf | StatusFlags::B);       // B should still be set
     }
 }

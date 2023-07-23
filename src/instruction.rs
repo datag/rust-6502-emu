@@ -149,6 +149,12 @@ pub const TXA: u8 = 0x8A;
 pub const TXS: u8 = 0x9A;
 pub const TYA: u8 = 0x98;
 
+// Stack Instructions
+pub const PHA: u8 = 0x48;
+pub const PHP: u8 = 0x08;
+pub const PLA: u8 = 0x68;
+pub const PLP: u8 = 0x28;
+
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
@@ -290,6 +296,11 @@ impl Instruction {
             TXA     => Ok(Self { opcode, mnemonic: Mnemonic::TXA, addr_mode: IMP, bytes: 1, cycles: 2 }),
             TXS     => Ok(Self { opcode, mnemonic: Mnemonic::TXS, addr_mode: IMP, bytes: 1, cycles: 2 }),
             TYA     => Ok(Self { opcode, mnemonic: Mnemonic::TYA, addr_mode: IMP, bytes: 1, cycles: 2 }),
+
+            PHA     => Ok(Self { opcode, mnemonic: Mnemonic::PHA, addr_mode: IMP, bytes: 1, cycles: 3 }),
+            PHP     => Ok(Self { opcode, mnemonic: Mnemonic::PHP, addr_mode: IMP, bytes: 1, cycles: 3 }),
+            PLA     => Ok(Self { opcode, mnemonic: Mnemonic::PLA, addr_mode: IMP, bytes: 1, cycles: 4 }),
+            PLP     => Ok(Self { opcode, mnemonic: Mnemonic::PLP, addr_mode: IMP, bytes: 1, cycles: 4 }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
 

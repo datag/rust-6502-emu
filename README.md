@@ -30,3 +30,4 @@
 * method doc
 * refactor: set ZN flags for value
 * address helper for tests
+* move most unit tests of cpu to integration tests?
