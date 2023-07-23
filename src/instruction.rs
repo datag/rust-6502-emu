@@ -209,6 +209,12 @@ pub const PLP: u8 = 0x28;
 // NOP - No Operation
 pub const NOP: u8 = 0xEA;
 
+// BRK - Force Break
+pub const BRK: u8 = 0x00;
+
+// RTI - Return from Interrupt
+pub const RTI: u8 = 0x40;
+
 pub struct Instruction {
     pub opcode: u8,
     pub mnemonic: Mnemonic,
@@ -398,6 +404,9 @@ impl Instruction {
             PLP     => Ok(Self { opcode, mnemonic: Mnemonic::PLP, addr_mode: IMP, bytes: 1, cycles: 4 }),
 
             NOP     => Ok(Self { opcode, mnemonic: Mnemonic::NOP, addr_mode: IMP, bytes: 1, cycles: 2 }),
+
+            BRK     => Ok(Self { opcode, mnemonic: Mnemonic::BRK, addr_mode: IMP, bytes: 1, cycles: 7 }),
+            RTI     => Ok(Self { opcode, mnemonic: Mnemonic::RTI, addr_mode: IMP, bytes: 1, cycles: 6 }),
 
             _ => Err(()),
         }

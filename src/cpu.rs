@@ -4,9 +4,12 @@ use bitflags::bitflags;
 use crate::instruction::*;
 use crate::mem::Memory;
 
-pub const VECTOR_RES: u16 = 0xFFFC;                     // 0xFFFC LB, 0xFFFF HB for reading reset vector address
+pub const VECTOR_NMI: u16 = 0xFFFA;                     // 0xFFFA LB, 0xFFFB HB NMI vector
+pub const VECTOR_RES: u16 = 0xFFFC;                     // 0xFFFC LB, 0xFFFD HB holding reset vector address
+pub const VECTOR_IRQ: u16 = 0xFFFE;                     // 0xFFFE LB, 0xFFFF HB holding interrupt vector address
+
 pub const STACK_BASE: u16 = 0x0100;                     // 0x0100 to 0x01FF
-pub const ZERO_PAGE_BASE: u16 = 0x0000;                      // 0x0000 to 0x00FF
+pub const ZERO_PAGE_BASE: u16 = 0x0000;                 // 0x0000 to 0x00FF
 pub const INITIAL_STACK_POINTER: u8 = 0xFD;             // [0x0100 - 0x01FF] in memory; CPU starts with SP=0 and decrements 3x which is 0xFD
 pub const CYCLES_AFTER_RESET: u64 = 7;                  // after reset 7 cycles already happend
 
@@ -353,6 +356,25 @@ impl Cpu {
             RTS => {
                 let addr = self.stack_pop_u16(mem);
                 self.pc = addr + 1;
+            },
+
+            BRK => {
+                self.stack_push_u16(mem, self.pc - ins.bytes as u16 + 2);      // previous PC + 2
+                self.stack_push_u8(mem, self.sr.union(StatusFlags::B).bits());
+                self.sr.set(StatusFlags::I, true);
+                self.pc = mem.read_u16(VECTOR_IRQ);
+            },
+
+            RTI => {
+                let mut ssr = StatusFlags::from_bits_truncate(self.stack_pop_u8(mem));
+                let spc = self.stack_pop_u16(mem);
+
+                // SR will be pulled with the break flag and bit 5 ignored
+                ssr.set(StatusFlags::RESERVED, self.sr.contains(StatusFlags::RESERVED));
+                ssr.set(StatusFlags::B, self.sr.contains(StatusFlags::B));
+
+                self.sr = ssr;
+                self.pc = spc;
             },
 
             BIT_ZPG | BIT_ABS => {
@@ -1511,8 +1533,8 @@ mod tests {
         cpu.exec(&mut mem, 1);
 
         assert_eq!(cpu.pc, addr);
-        assert_eq!(cpu.sp, sp_orig - 2 /* 16 bit addr */);
-        assert_eq!(mem.read_u16(cpu.addr_stack(cpu.sp+ 2)), ADDR_RESET_VECTOR + 2);
+        assert_eq!(cpu.sp, sp_orig - 2 /* return addr */);
+        assert_eq!(mem.read_u16(cpu.addr_stack(cpu.sp + 2)), ADDR_RESET_VECTOR + 2);
 
 
         let sp_orig = cpu.sp;
@@ -1521,6 +1543,41 @@ mod tests {
         cpu.exec(&mut mem, 1);
 
         assert_eq!(cpu.pc, ADDR_RESET_VECTOR + 3 /* after JSR instruction at NOP */);
-        assert_eq!(cpu.sp, sp_orig + 2 /* 16 bit addr */);
+        assert_eq!(cpu.sp, sp_orig + 2 /* return addr */);
+    }
+
+    #[test]
+    fn ins_brkrti() {
+        let (mut cpu, mut mem) = setup();
+
+        let addr: u16 = 0xABCD;
+        let break_mark: u8 = 0xAA;
+        let sp_orig = cpu.sp;
+
+        // prepare reset vector with ISR
+        mem.write_u16(VECTOR_IRQ, addr);
+        mem.write_u8(addr, NOP);
+        mem.write_u8(addr, RTI);
+
+        // break
+        mem.write_u8(ADDR_RESET_VECTOR, BRK);
+        mem.write_u8(None, break_mark);      // Optional break mark
+        mem.write_u8(None, NOP);       // next instruction
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(cpu.pc, addr);
+        assert_eq!(cpu.sp, sp_orig - 3 /* SR and return address */);
+        assert_eq!(StatusFlags::from_bits_truncate(mem.read_u8(cpu.addr_stack(cpu.sp + 1))), StatusFlags::RESERVED | StatusFlags::B);
+        assert_eq!(mem.read_u16(cpu.addr_stack(cpu.sp + 3)), ADDR_RESET_VECTOR + 2);
+
+
+        let sp_orig = cpu.sp;
+
+        cpu.exec(&mut mem, 1);
+
+        assert_eq!(cpu.pc, ADDR_RESET_VECTOR + 2 /* after BRK instruction + break mark at NOP */);
+        assert_eq!(cpu.sp, sp_orig + 3 /* SR and return address */);
+        assert_eq!(mem.read_u8(ADDR_RESET_VECTOR + 1), break_mark);
     }
 }
