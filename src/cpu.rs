@@ -143,6 +143,8 @@ impl Cpu {
     fn dump_ins(&self, mem: &Memory, ins: &Instruction) {
         print!(">> {:04X}  ", self.pc);
 
+        let addr_operand = self.pc.wrapping_add(1);
+
         for i in 0..ins.bytes {
             print!("{:02X} ", mem.read_u8(self.pc.wrapping_add(i as u16)));
         }
@@ -152,16 +154,37 @@ impl Cpu {
         
         let oper = match ins.bytes {
             1 => String::from(if ins.addr_mode == AddressingMode::ACC { "A" } else { "" }),
-            2 => format!("${:02X}", mem.read_u8(self.pc.wrapping_add(1))),
-            3 => format!("${:04X}", mem.read_u16(self.pc.wrapping_add(1))),
+            2 => format!("${:02X}", mem.read_u8(addr_operand)),
+            3 => format!("${:04X}", mem.read_u16(addr_operand)),
             _ => panic!("Unexpected number of bytes {} for instruction", ins.bytes),
         };
 
         let operands = ins.addr_mode.operands().replace("oper", &oper);
 
-        print!(" {:?} {:<10}  ({})", ins.mnemonic, operands, ins.addr_mode.abbr());
+        let calculated = match ins.addr_mode {
+            AddressingMode::IMP => String::from(""),
+            AddressingMode::ACC => format!("${:02X}", self.ac),
+            AddressingMode::IMM => format!("${:02X}", mem.read_u8(addr_operand)),
+            _ => {
+                let addr = self.fetch_addr(mem, ins, addr_operand);
+                format!("${:04X}", addr)
+            },
+        };
 
-        println!();
+        let reg_info = match ins.addr_mode {
+            AddressingMode::ACC => format!("A=${:02X}", self.ac),
+            AddressingMode::ZPX | AddressingMode::ABX | AddressingMode::IDX => format!("X=${:02X}", self.x),
+            AddressingMode::ZPY | AddressingMode::ABY | AddressingMode::IDY => format!("Y=${:02X}", self.y),
+            _ => String::from(""),
+        };
+
+        let mut addr_mode_info = String::from(ins.addr_mode.abbr());
+        if ins.addr_mode != AddressingMode::IMP {
+            addr_mode_info.push_str(" ");
+            addr_mode_info.push_str(ins.addr_mode.operands());
+        }
+
+        println!(" {:?} {:<10}  ; {:<5} {:<5}  ({})", ins.mnemonic, operands, calculated, reg_info, addr_mode_info);
     }
 
     fn addr_stack(&self, addr: u8) -> u16 {
