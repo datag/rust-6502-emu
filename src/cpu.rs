@@ -1,6 +1,6 @@
-
 use std::fmt;
 use bitflags::bitflags;
+use colored::Colorize;
 use crate::instruction::*;
 use crate::mem::Memory;
 
@@ -141,16 +141,15 @@ impl Cpu {
     }
 
     fn dump_ins(&self, mem: &Memory, ins: &Instruction) {
-        print!(">> {:04X}  ", self.pc);
-
         let addr_operand = self.pc.wrapping_add(1);
 
-        for i in 0..ins.bytes {
-            print!("{:02X} ", mem.read_u8(self.pc.wrapping_add(i as u16)));
-        }
-        for _ in 0..(3 - ins.bytes) {
-            print!("   ");
-        }
+        let oper_bytestr = match ins.bytes {
+            2 => format!("{:02X}   ", mem.read_u8(addr_operand)),
+            3 => format!("{:02X} {:02X}", mem.read_u8(addr_operand), mem.read_u8(addr_operand.wrapping_add(1))),
+            _ => String::from("     "),
+        };
+
+        let opcode = format!("{:02X}", ins.opcode);
         
         let oper = match ins.bytes {
             1 => String::from(if ins.addr_mode == AddressingMode::ACC { "A" } else { "" }),
@@ -184,7 +183,15 @@ impl Cpu {
             addr_mode_info.push_str(ins.addr_mode.operands());
         }
 
-        println!(" {:?} {:<10}  ; {:<5} {:<5}  ({})", ins.mnemonic, operands, calculated, reg_info, addr_mode_info);
+        let mnemonic = format!("{:?}", ins.mnemonic);
+
+        let info = format!("; {:<5} {:<5}  ({})", calculated, reg_info, addr_mode_info);
+
+        println!("{} {:04X}  {} {}   {} {:<10}  {}",
+            ">>".yellow(), self.pc,
+            opcode.bold(), oper_bytestr,
+            mnemonic.bold(), operands.bright_blue(),
+            info.bright_black());
     }
 
     fn addr_stack(&self, addr: u8) -> u16 {
