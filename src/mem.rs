@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Error};
 
 use crate::cpu;
-use crate::instruction::{JSR_ABS, NOP};
+use crate::instruction;
 
 const MEMORY_SIZE: usize = 0x10000;
 
@@ -61,43 +61,20 @@ impl Memory {
             self.write_u8(ADDR_RESET_VECTOR + (i as u16), i);
         }
 
-        // // ADC #1
-        // self.write_u8(ADDR_RESET_VECTOR, 0x69);
-        // self.write_u8(None, 0x01);
+        self.write_u8(ADDR_RESET_VECTOR, instruction::NOP);
 
-        // // ADC #FF
-        // self.write_u8(ADDR_RESET_VECTOR + 2, 0x69);
-        // self.write_u8(ADDR_RESET_VECTOR + 3, 0xFF);
+        self.write_u8(None, instruction::ADC_IMM);
+        self.write_u8(None, 0x01);
 
-        // // JMP (ABS)
-        // self.write_u8(ADDR_RESET_VECTOR + 4, 0x4C);
-        // self.write_u16(ADDR_RESET_VECTOR + 5, ADDR_RESET_VECTOR);
+        self.write_u8(None, instruction::ADC_ZPG);
+        self.write_u8(None, 0x01);
 
-        // // JMP (IND)
-        // self.write_u16(0x00F0, ADDR_RESET_VECTOR);
-        // self.write_u8(ADDR_RESET_VECTOR + 4, 0x6C);
-        // self.write_u16(ADDR_RESET_VECTOR + 5, 0x00F0);
+        self.write_u8(None, instruction::ADC_ZPX);
+        self.write_u8(None, 0x01);
 
-        // // BIT (ABS)
-        // self.write_u16(0x00F0, 0x81);
-        // self.write_u8(ADDR_RESET_VECTOR + 0, 0x2C);
-        // self.write_u16(ADDR_RESET_VECTOR + 1, 0x00F0);
+        self.write_u8(None, instruction::ADC_ABS);
+        self.write_u16(None, 0xF001);
 
-        // // B**
-        // self.write_u8(ADDR_RESET_VECTOR + 0, crate::instruction::BVS_REL);
-        // self.write_u8(ADDR_RESET_VECTOR + 1, (-2 as i8) as u8);
-
-        // // some instruction
-        // self.write_u8(ADDR_RESET_VECTOR + 2, crate::instruction::ADC_IMM);
-        // self.write_u8(ADDR_RESET_VECTOR + 3, 0x01);
-
-        // // some other instruction
-        // self.write_u8(ADDR_RESET_VECTOR + 4, crate::instruction::ADC_IMM);
-        // self.write_u8(ADDR_RESET_VECTOR + 5, 0x02);
-
-        self.write_u8(ADDR_RESET_VECTOR, JSR_ABS);
-        self.write_u16(None, 0xABCD);
-        self.write_u8(0xABCD, NOP);
 
     }
 

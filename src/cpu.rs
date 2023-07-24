@@ -118,7 +118,7 @@ impl Cpu {
             let result = Instruction::from_opcode(opcode);
             match result {
                 Ok(ins) => {
-                    println!(">> @{:04X} {:?}", self.pc, ins);
+                    self.dump_ins(&mem, &ins);
             
                     // advance PC by instruction bytes
                     self.pc += ins.bytes as u16;
@@ -138,6 +138,30 @@ impl Cpu {
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
         }
+    }
+
+    fn dump_ins(&self, mem: &Memory, ins: &Instruction) {
+        print!(">> {:04X}  ", self.pc);
+
+        for i in 0..ins.bytes {
+            print!("{:02X} ", mem.read_u8(self.pc.wrapping_add(i as u16)));
+        }
+        for _ in 0..(3 - ins.bytes) {
+            print!("   ");
+        }
+        
+        let oper = match ins.bytes {
+            1 => String::from(if ins.addr_mode == AddressingMode::ACC { "A" } else { "" }),
+            2 => format!("${:02X}", mem.read_u8(self.pc.wrapping_add(1))),
+            3 => format!("${:04X}", mem.read_u16(self.pc.wrapping_add(1))),
+            _ => panic!("Unexpected number of bytes {} for instruction", ins.bytes),
+        };
+
+        let operands = ins.addr_mode.operands().replace("oper", &oper);
+
+        print!(" {:?} {:<10}  ({})", ins.mnemonic, operands, ins.addr_mode.abbr());
+
+        println!();
     }
 
     fn addr_stack(&self, addr: u8) -> u16 {
@@ -264,7 +288,7 @@ impl Cpu {
         let mut cycles_additional = 0;
 
         match opcode {
-            NOP => println!("NOP"),
+            NOP => {},
 
             ADC_IMM | ADC_ZPG | ADC_ZPX | ADC_ABS | ADC_ABX | ADC_ABY | ADC_IDX | ADC_IDY
             | SBC_IMM | SBC_ZPG | SBC_ZPX | SBC_ABS | SBC_ABX | SBC_ABY | SBC_IDX | SBC_IDY => {
@@ -282,7 +306,7 @@ impl Cpu {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
                     value = mem.read_u8(addr);
                 }
-                println!("oper: 0x{:02X}", value);
+                // println!("oper: 0x{:02X}", value);
 
                 let result: u8;
                 if ins.mnemonic == Mnemonic::ADC {
@@ -298,7 +322,7 @@ impl Cpu {
                     self.sr.set(StatusFlags::C, difference < 256);      // acts as borrow flag
                     self.sr.set(StatusFlags::V, ((self.ac ^ value) & (self.ac ^ result) & 0x80) != 0);
                 }
-                println!("AC is now: 0x{:02X}", result);
+                // println!("AC is now: 0x{:02X}", result);
 
                 self.sr.set(StatusFlags::N, result & 0b10000000 != 0);
                 self.sr.set(StatusFlags::Z, result == 0);
@@ -322,7 +346,7 @@ impl Cpu {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
                     value = mem.read_u8(addr);
                 }
-                println!("oper: 0x{:02X}", value);
+                // println!("oper: 0x{:02X}", value);
 
                 let reg = match ins.mnemonic {
                     Mnemonic::CMP => self.ac,
@@ -399,7 +423,7 @@ impl Cpu {
                     addr = self.fetch_addr(mem, ins, cur_addr);
                     value = mem.read_u8(addr);
                 }
-                println!("oper: 0x{:02X}", value);
+                // println!("oper: 0x{:02X}", value);
 
                 let carry_orig: bool = self.sr.contains(StatusFlags::C);
 
@@ -447,7 +471,7 @@ impl Cpu {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
                     value = mem.read_u8(addr);
                 }
-                println!("oper: 0x{:02X}", value);
+                // println!("oper: 0x{:02X}", value);
 
                 self.ac = match ins.mnemonic {
                     Mnemonic::AND => self.ac & value,
@@ -526,7 +550,7 @@ impl Cpu {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
                     value = mem.read_u8(addr);
                 }
-                println!("oper: 0x{:02X}", value);
+                // println!("oper: 0x{:02X}", value);
 
                 match ins.mnemonic {
                     Mnemonic::LDA => self.ac = value,
