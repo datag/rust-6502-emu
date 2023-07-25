@@ -1,6 +1,6 @@
 # Examples
 
-Using https://cc65.github.io/:
+Using :
 
 ```shell
 ca65 example.asm

@@ -1,10 +1,63 @@
 # rust-6502-emu
 
-## Status
+My Rust learning project writing a simple 6502 emulator.
 
-* Implemented Opcodes: https://docs.google.com/spreadsheets/d/1L-864UBW4wkh5y9SUwTcCbbFewtKfADZxqDlOhk8pA4
+## Building
 
-## Sources
+```shell
+cargo build --release
+```
+
+This results in the release binary `./target/release/rust-6502-emu`.
+
+## Running
+
+### Synopsis
+
+```
+$ ./target/release/rust-6502-emu --help
+Usage: rust-6502-emu [OPTIONS] [CYCLES_TO_EXECUTE]
+
+Arguments:
+  [CYCLES_TO_EXECUTE]  Maximum cycles to execute [default: 1]
+
+Options:
+  -d, --demo         Load demo data
+  -f, --file <FILE>  Load data from file
+  -v, --verbose...   Verbosity; can be specified multiple times
+  -h, --help         Print help
+  -V, --version      Print version
+```
+
+### Example invocation
+
+Running an example program:
+
+```shell
+./target/release/rust-6502-emu -f examples/fibonacci.bin 100
+```
+
+Running with demo code:
+
+```shell
+./target/release/rust-6502-emu -d 100
+```
+
+Running without a program initialized in memory is less exciting, as we're hitting a BRK as first instruction:
+
+```shell
+./target/release/rust-6502-emu
+```
+
+## Example programs
+
+There are some example programs in `./examples` including a Makefile. [CC65](https://cc65.github.io/) is used for assembling and linking.
+
+Pre-built `*.bin` files can be loaded using the `-f <binfile>` option.
+
+The examples can be (re)build using `make all`.
+
+## Useful resources / documents
 
 * https://en.wikipedia.org/wiki/MOS_Technology_6502
 * https://www.masswerk.at/6502/6502_instruction_set.html
@@ -21,16 +74,3 @@
 
 * https://www.masswerk.at/6502/
 * https://cc65.github.io/
-
-## TODO
-
-* sort instructions by type
-* refactor opcode constants into enum?
-* merge tests (e.g. AND + EOR + ORA)
-* logging
-* map ROM
-* method doc
-* refactor: set ZN flags for value
-* address helper for tests
-* move most unit tests of cpu to integration tests?
-* handle page crossings in all ins resulting in additional cycles
