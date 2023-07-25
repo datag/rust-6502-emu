@@ -1,0 +1,11 @@
+[package]
+name = "rust-6502-emu"
+version = "0.1.0"
+authors = ["Dominik Geyer <dominik.geyer@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+bitflags = "2.3.3"                                               # https://crates.io/crates/bitflags
+clap = { version = "4.3.17", features = ["derive", "color"] }    # https://docs.rs/clap/latest/clap/
+colored = "2.0.4"
+
