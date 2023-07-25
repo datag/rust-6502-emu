@@ -1,4 +1,8 @@
+# Examples
+
+Using https://cc65.github.io/:
+
 ```shell
-ca65 basic_01.bin
-ld65 -o basic_01.bin -C rust-6502-emu.cfg basic_01.o
+ca65 example.asm
+ld65 -o example.bin -C rust-6502-emu.cfg example.o
 ```
