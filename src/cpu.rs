@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt,cmp};
 use bitflags::bitflags;
 use colored::Colorize;
 use crate::instruction::*;
@@ -102,7 +102,8 @@ impl Cpu {
     }
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u64) {
-        println!("[before   ] {:?}", &self);
+        // println!("[before   ] {:?}", &self);
+        self.dump_state(mem);
 
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
@@ -133,7 +134,8 @@ impl Cpu {
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
 
-                    println!("[after {:?}] {:?}\n", ins.mnemonic, self);
+                    // println!("[after {:?}] {:?}\n", ins.mnemonic, self);
+                    self.dump_state(mem);
                 },
                 Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
             }
@@ -192,6 +194,31 @@ impl Cpu {
             opcode.bold(), oper_bytestr,
             mnemonic.bold(), operands.bright_blue(),
             info.bright_black());
+    }
+
+    fn dump_state(&self, mem: &Memory) {
+        let srf_n = if self.sr.contains(StatusFlags::N) { 1 } else { 0 };
+        let srf_v = if self.sr.contains(StatusFlags::V) { 1 } else { 0 };
+        let srf_b = if self.sr.contains(StatusFlags::B) { 1 } else { 0 };
+        let srf_d = if self.sr.contains(StatusFlags::D) { 1 } else { 0 };
+        let srf_i = if self.sr.contains(StatusFlags::I) { 1 } else { 0 };
+        let srf_z = if self.sr.contains(StatusFlags::Z) { 1 } else { 0 };
+        let srf_c = if self.sr.contains(StatusFlags::C) { 1 } else { 0 };
+
+        let sp_bytes = cmp::min(0xFF - self.sp, 8);
+        let mut sp_headers: Vec<String> = Vec::new();
+        let mut sp_values: Vec<String> = Vec::new();
+        for spp in 0..sp_bytes {
+            let sp = self.sp.wrapping_add(spp).wrapping_add(1);
+            sp_headers.push(format!("{:02X}", sp));
+            sp_values.push(format!("{:02X}", mem.read_u8(self.addr_stack(sp))));
+        }
+
+        println!("    |  {}  | {} | {} | {} | {} [NV-BDIZC] | {}  [{}] |",
+            "PC".bold(), "AC".bold(), " X".bold(), " Y".bold(), "SR".bold(), "SP".bold(), sp_headers.join(" "));
+
+        println!("    | {:04X} | {:02X} | {:02X} | {:02X} | {:02X}  {srf_n}{srf_v}1{srf_b}{srf_d}{srf_i}{srf_z}{srf_c}  | {:02X}  [{}] |",
+            self.pc, self.ac, self.x, self.y, self.sr, self.sp, sp_values.join(" "));
     }
 
     fn addr_stack(&self, addr: u8) -> u16 {
