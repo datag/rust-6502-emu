@@ -190,7 +190,7 @@ impl Cpu {
         let info = format!("; {:<5} {:<5}  ({})", calculated, reg_info, addr_mode_info);
 
         println!("{} {:04X}  {} {}   {} {:<10}  {}",
-            ">>".yellow(), self.pc,
+            "»»»".black().on_yellow().bold(), self.pc,
             opcode.bold(), oper_bytestr,
             mnemonic.bold(), operands.bright_blue(),
             info.bright_black());
@@ -205,7 +205,8 @@ impl Cpu {
         let srf_z = if self.sr.contains(StatusFlags::Z) { 1 } else { 0 };
         let srf_c = if self.sr.contains(StatusFlags::C) { 1 } else { 0 };
 
-        let sp_bytes = cmp::min(0xFF - self.sp, 8);
+        let sp_maxbytes = 8;
+        let sp_bytes = cmp::min(0xFF - self.sp, sp_maxbytes);
         let mut sp_headers: Vec<String> = Vec::new();
         let mut sp_values: Vec<String> = Vec::new();
         for spp in 0..sp_bytes {
@@ -213,11 +214,12 @@ impl Cpu {
             sp_headers.push(format!("{:02X}", sp));
             sp_values.push(format!("{:02X}", mem.read_u8(self.addr_stack(sp))));
         }
+        let sp_width: usize = (sp_maxbytes * 2 + sp_maxbytes - 1) as usize;
 
-        println!("    |  {}  | {} | {} | {} | {} [NV-BDIZC] | {}  [{}] |",
+        println!("    ░  {}  ░ {} ░ {} ░ {} ░ {} [NV-BDIZC] ░ {}  [{:>sp_width$}] ░",
             "PC".bold(), "AC".bold(), " X".bold(), " Y".bold(), "SR".bold(), "SP".bold(), sp_headers.join(" "));
 
-        println!("    | {:04X} | {:02X} | {:02X} | {:02X} | {:02X}  {srf_n}{srf_v}1{srf_b}{srf_d}{srf_i}{srf_z}{srf_c}  | {:02X}  [{}] |",
+        println!("    ░ {:04X} ░ {:02X} ░ {:02X} ░ {:02X} ░ {:02X}  {srf_n}{srf_v}1{srf_b}{srf_d}{srf_i}{srf_z}{srf_c}  ░ {:02X}  [{:>sp_width$}] ░",
             self.pc, self.ac, self.x, self.y, self.sr, self.sp, sp_values.join(" "));
     }
 
