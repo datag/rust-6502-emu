@@ -332,6 +332,7 @@ impl Cpu {
             AddressingMode::ZPG => self.fetch_addr_zpg(mem, addr),
             AddressingMode::ZPX => self.fetch_addr_zpx(mem, addr),
             AddressingMode::ZPY => self.fetch_addr_zpy(mem, addr),
+            AddressingMode::REL => self.fetch_addr_rel(mem, addr),
             AddressingMode::ABS => self.fetch_addr_abs(mem, addr),
             AddressingMode::ABX => self.fetch_addr_abx(mem, addr),
             AddressingMode::ABY => self.fetch_addr_aby(mem, addr),
