@@ -447,6 +447,15 @@ impl Cpu {
                 self.stack_push_u8(mem, self.sr.union(StatusFlags::B).bits());
                 self.sr.set(StatusFlags::I, true);
                 self.pc = mem.read_u16(VECTOR_IRQ);
+
+                if self.pc == 0x0000 {
+                    self.dump_state(mem);
+                    panic!("Reset vector points to $0000 (uninitialized) and I'm guessing we're done. Exiting.");
+                }
+                if mem.read_u8(self.pc) == BRK {
+                    self.dump_state(mem);
+                    panic!("Instruction pointed to by reset vector is BRK ($00), which in fact is an infinite loop. Exiting.");
+                }
             },
 
             RTI => {
