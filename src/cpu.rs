@@ -154,7 +154,7 @@ impl Cpu {
         let opcode = format!("{:02X}", ins.opcode);
         
         let oper = match ins.bytes {
-            1 => String::from(if ins.addr_mode == AddressingMode::ACC { "A" } else { "" }),
+            1 => if ins.addr_mode == AddressingMode::ACC { "A".to_owned() } else { String::new() },
             2 => format!("${:02X}", mem.read_u8(addr_operand)),
             3 => format!("${:04X}", mem.read_u16(addr_operand)),
             _ => panic!("Unexpected number of bytes {} for instruction", ins.bytes),
@@ -163,7 +163,7 @@ impl Cpu {
         let operands = ins.addr_mode.operands().replace("oper", &oper);
 
         let calculated = match ins.addr_mode {
-            AddressingMode::IMP => String::from(""),
+            AddressingMode::IMP => String::new(),
             AddressingMode::ACC => format!("${:02X}", self.ac),
             AddressingMode::IMM => format!("${:02X}", mem.read_u8(addr_operand)),
             _ => {
@@ -176,7 +176,7 @@ impl Cpu {
             AddressingMode::ACC => format!("A=${:02X}", self.ac),
             AddressingMode::ZPX | AddressingMode::ABX | AddressingMode::IDX => format!("X=${:02X}", self.x),
             AddressingMode::ZPY | AddressingMode::ABY | AddressingMode::IDY => format!("Y=${:02X}", self.y),
-            _ => String::from(""),
+            _ => String::new(),
         };
 
         let mut addr_mode_info = String::from(ins.addr_mode.abbr());
@@ -370,7 +370,7 @@ impl Cpu {
 
                 let result: u8;
                 if ins.mnemonic == Mnemonic::ADC {
-                    let sum = (self.ac as u16) + value as u16 + if self.sr.contains(StatusFlags::C) { 1 } else { 0 } as u16;
+                    let sum = (self.ac as u16) + value as u16 + if self.sr.contains(StatusFlags::C) { 1u16 } else { 0u16 };
                     result = (sum & 0xFF) as u8;
                     
                     self.sr.set(StatusFlags::C, sum > 255);
@@ -1244,7 +1244,7 @@ mod tests {
                 (BVS_REL, StatusFlags::empty(), false),
             ] {
                 let addr_nobranch = ADDR_RESET_VECTOR + 2;
-                let addr_branch = (ADDR_RESET_VECTOR + 2 as u16).wrapping_add(rel as u16);
+                let addr_branch = (ADDR_RESET_VECTOR + 2u16).wrapping_add(rel as u16);
 
                 cpu.reset(&mut mem);
                 cpu.sr.insert(srf);
