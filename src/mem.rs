@@ -164,7 +164,7 @@ mod tests {
         let mem = setup();
 
         // all zero excluding VECTOR_RES (2 bytes)
-        assert!(!has_nonzero_value(&mem.data[1..cpu::VECTOR_RES as usize]));
+        assert!(!has_nonzero_value(&mem.data[0..cpu::VECTOR_RES as usize]));
         assert!(!has_nonzero_value(&mem.data[(cpu::VECTOR_RES as usize)+2..]));
     }
 
