@@ -791,8 +791,8 @@ mod tests {
         let addr_expected: u16 = addr as u16;
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_zpg(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -811,8 +811,8 @@ mod tests {
         cpu.reset(&mut mem);
         cpu.x = 0x0F;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(None, addr);
         let addr_effective = cpu.fetch_addr_zpx(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
         assert_eq!(addr_effective, addr_expected);
@@ -821,8 +821,8 @@ mod tests {
         cpu.reset(&mut mem);
         cpu.y = 0x0F;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(None, addr);
         let addr_effective = cpu.fetch_addr_zpy(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
         assert_eq!(addr_effective, addr_expected);
@@ -837,8 +837,8 @@ mod tests {
         let addr_expected: u16 = addr;
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_abs(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -857,8 +857,8 @@ mod tests {
         cpu.x = 0x0F;
         let addr_expected: u16 = addr.wrapping_add(cpu.x as u16);
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_abx(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -869,8 +869,8 @@ mod tests {
         cpu.y = 0x0F;
         let addr_expected: u16 = addr.wrapping_add(cpu.y as u16);
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_aby(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -887,8 +887,8 @@ mod tests {
         let data: u8 = 0xAA;
         mem.write_u16(addr, addr_expected);     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u16(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_ind(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -908,8 +908,8 @@ mod tests {
         cpu.x = 3;
         mem.write_u16(addr.wrapping_add(cpu.x) as u16, addr_expected);     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_idx(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -921,8 +921,8 @@ mod tests {
         cpu.y = 3;
         mem.write_u16(addr as u16, addr_expected.wrapping_sub(cpu.y as u16));     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_u8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_idy(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -938,8 +938,8 @@ mod tests {
         let addr_expected: u16 = cpu.pc.wrapping_add(addr as u16);
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP /* opcode does not matter */);
-        mem.write_i8(ADDR_RESET_VECTOR + 1, addr);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_i8(None, addr);
 
         let addr_effective = cpu.fetch_addr_rel(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -951,7 +951,7 @@ mod tests {
     fn ins_nop() {
         let (mut cpu, mut mem) = setup();
 
-        mem.write_u8(ADDR_RESET_VECTOR + 0, NOP);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP);
         let pc_orig = cpu.pc;
         cpu.exec(&mut mem, 1);
 

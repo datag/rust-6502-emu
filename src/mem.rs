@@ -164,8 +164,8 @@ mod tests {
         let mem = setup();
 
         // all zero excluding VECTOR_RES (2 bytes)
-        assert_eq!(has_nonzero_value(&mem.data[1..cpu::VECTOR_RES as usize]), false);
-        assert_eq!(has_nonzero_value(&mem.data[(cpu::VECTOR_RES as usize)+2..]), false);
+        assert!(!has_nonzero_value(&mem.data[1..cpu::VECTOR_RES as usize]));
+        assert!(!has_nonzero_value(&mem.data[(cpu::VECTOR_RES as usize)+2..]));
     }
 
     #[test]
@@ -199,7 +199,7 @@ mod tests {
         let value: u16 = 0xBEEF;
         let lb: u8 = 0xEF;  // (value & 0x00FF) as u8;
         let hb: u8 = 0xBE;  // ((value & 0xFF00) >> 8) as u8;
-        mem.data[(addr + 0) as usize] = lb;
+        mem.data[addr as usize] = lb;
         mem.data[(addr + 1) as usize] = hb;
         assert_eq!(mem.read_u16(addr), value);
     }
@@ -242,7 +242,7 @@ mod tests {
         let hb: u8 = 0xBE;  // ((value & 0xFF00) >> 8) as u8;
         let value2: u16 = 0xCAFE;
         mem.write_u16(addr, value1);
-        assert_eq!(mem.data[(addr + 0) as usize], lb);
+        assert_eq!(mem.data[addr as usize], lb);
         assert_eq!(mem.data[(addr + 1) as usize], hb);
 
         // consecutive test
