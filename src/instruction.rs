@@ -224,7 +224,7 @@ pub struct Instruction {
 }
 
 impl Instruction {
-    pub fn from_opcode(opcode: u8) -> Result<Self, ()> {
+    pub fn from_opcode(opcode: u8) -> Result<Self, String> {
         match opcode {
             ADC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IMM, bytes: 2, cycles: 2 }),
             ADC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ZPG, bytes: 2, cycles: 3 }),
@@ -408,7 +408,7 @@ impl Instruction {
             BRK     => Ok(Self { opcode, mnemonic: Mnemonic::BRK, addr_mode: IMP, bytes: 1, cycles: 7 }),
             RTI     => Ok(Self { opcode, mnemonic: Mnemonic::RTI, addr_mode: IMP, bytes: 1, cycles: 6 }),
 
-            _ => Err(()),
+            _ => Err(format!("Instruction for opcode {:02X} does not exist or is not implemented", opcode)),
         }
     }
 }

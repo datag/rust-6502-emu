@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::{fmt,cmp};
 use bitflags::bitflags;
 use colored::Colorize;
@@ -137,7 +138,7 @@ impl Cpu {
                     // println!("[after {:?}] {:?}\n", ins.mnemonic, self);
                     self.dump_state(mem);
                 },
-                Err(()) => panic!("Unimplemented or invalid instruction {:02X} @ {:04X}", opcode, self.pc),
+                Err(cause) => panic!("Cannot convert opcode {:02X} @ {:04X} into instruction: {}", opcode, self.pc, cause),
             }
         }
     }
@@ -413,18 +414,22 @@ impl Cpu {
                     _ => panic!("Unhandled mnemonic {:?}", ins.mnemonic),
                 };
 
-                if reg < value {
-                    self.sr.set(StatusFlags::Z, false);
-                    self.sr.set(StatusFlags::C, false);
-                    self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
-                } else if reg > value {
-                    self.sr.set(StatusFlags::Z, false);
-                    self.sr.set(StatusFlags::C, true);
-                    self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
-                } else /* reg == value */ {
-                    self.sr.set(StatusFlags::Z, true);
-                    self.sr.set(StatusFlags::C, true);
-                    self.sr.set(StatusFlags::N, false);
+                match reg.cmp(&value) {
+                    Ordering::Less => {
+                        self.sr.set(StatusFlags::Z, false);
+                        self.sr.set(StatusFlags::C, false);
+                        self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
+                    },
+                    Ordering::Greater => {
+                        self.sr.set(StatusFlags::Z, false);
+                        self.sr.set(StatusFlags::C, true);
+                        self.sr.set(StatusFlags::N, (reg.wrapping_sub(value) & 0b10000000) != 0);
+                    },
+                    Ordering::Equal => {
+                        self.sr.set(StatusFlags::Z, true);
+                        self.sr.set(StatusFlags::C, true);
+                        self.sr.set(StatusFlags::N, false);
+                    },
                 }
             },
 

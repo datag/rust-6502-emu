@@ -43,8 +43,8 @@ impl Memory {
             match reader.read(&mut buffer) {
                 Ok(0) => break, // EOF
                 Ok(bytes_read) => {
-                    for i in 0..bytes_read {
-                        self.write_u8(addr + pos, buffer[i]);
+                    for item in buffer.iter().take(bytes_read) {
+                        self.write_u8(addr + pos, *item);
                         pos += 1;
                     }
                 }
