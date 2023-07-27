@@ -1,6 +1,11 @@
 # Examples
 
-Using :
+* `add.asm` - Simple arithmetic example of adding two numbers
+* `fibonacci.asm` - Calculates the Nth fibonacci number
+
+## Build
+
+Using [CC65](https://cc65.github.io/):
 
 ```shell
 ca65 example.asm
