@@ -119,7 +119,7 @@ impl Cpu {
             let result = Instruction::from_opcode(opcode);
             match result {
                 Ok(ins) => {
-                    self.dump_ins(&mem, &ins);
+                    self.dump_ins(mem, &ins);
             
                     // advance PC by instruction bytes
                     self.pc += ins.bytes as u16;
@@ -181,7 +181,7 @@ impl Cpu {
 
         let mut addr_mode_info = String::from(ins.addr_mode.abbr());
         if ins.addr_mode != AddressingMode::IMP {
-            addr_mode_info.push_str(" ");
+            addr_mode_info.push(' ');
             addr_mode_info.push_str(ins.addr_mode.operands());
         }
 
@@ -359,13 +359,12 @@ impl Cpu {
                     panic!("BCD mode not yet implemented");
                 }
 
-                let value;
-                if ins.addr_mode == AddressingMode::IMM {
-                    value = mem.read_u8(cur_addr)
+                let value = if ins.addr_mode == AddressingMode::IMM {
+                    mem.read_u8(cur_addr)
                 } else {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
-                    value = mem.read_u8(addr);
-                }
+                    mem.read_u8(addr)
+                };
                 // println!("oper: 0x{:02X}", value);
 
                 let result: u8;
@@ -399,13 +398,12 @@ impl Cpu {
                     panic!("BCD mode not yet implemented");
                 }
 
-                let value;
-                if ins.addr_mode == AddressingMode::IMM {
-                    value = mem.read_u8(cur_addr)
+                let value = if ins.addr_mode == AddressingMode::IMM {
+                    mem.read_u8(cur_addr)
                 } else {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
-                    value = mem.read_u8(addr);
-                }
+                    mem.read_u8(addr)
+                };
                 // println!("oper: 0x{:02X}", value);
 
                 let reg = match ins.mnemonic {
@@ -533,13 +531,12 @@ impl Cpu {
             | EOR_IMM | EOR_ZPG | EOR_ZPX | EOR_ABS | EOR_ABX | EOR_ABY | EOR_IDX | EOR_IDY
             | ORA_IMM | ORA_ZPG | ORA_ZPX | ORA_ABS | ORA_ABX | ORA_ABY | ORA_IDX | ORA_IDY => {
                 // TODO: additional cycles if page crossed
-                let value;
-                if ins.addr_mode == AddressingMode::IMM {
-                    value = mem.read_u8(cur_addr)
+                let value = if ins.addr_mode == AddressingMode::IMM {
+                    mem.read_u8(cur_addr)
                 } else {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
-                    value = mem.read_u8(addr);
-                }
+                    mem.read_u8(addr)
+                };
                 // println!("oper: 0x{:02X}", value);
 
                 self.ac = match ins.mnemonic {
@@ -612,13 +609,12 @@ impl Cpu {
             | LDX_IMM | LDX_ZPG | LDX_ZPY | LDX_ABS | LDX_ABY
             | LDY_IMM | LDY_ZPG | LDY_ZPY | LDY_ABS | LDY_ABY => {
                 // TODO: possible page crossing additional cycle for LDA: ABX, ABY and IDX  and LDX/LDY: ABX?
-                let value;
-                if ins.addr_mode == AddressingMode::IMM {
-                    value = mem.read_u8(cur_addr)
+                let value = if ins.addr_mode == AddressingMode::IMM {
+                    mem.read_u8(cur_addr)
                 } else {
                     let addr = self.fetch_addr(mem, ins, cur_addr);
-                    value = mem.read_u8(addr);
-                }
+                    mem.read_u8(addr)
+                };
                 // println!("oper: 0x{:02X}", value);
 
                 match ins.mnemonic {
@@ -970,7 +966,7 @@ mod tests {
             (ADC_IMM, 0x01, 0x01, false, 0x02, StatusFlags::RESERVED),
             (ADC_IMM, 0x7F, 0x01, false, 0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),
             (ADC_IMM, 0x7F, 0x00, true,  0x80, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::V),      // test if carry is taken into account
-            (ADC_IMM, 0xfF, 0xFF, false, 0xFE, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::C),
+            (ADC_IMM, 0xFF, 0xFF, false, 0xFE, StatusFlags::RESERVED | StatusFlags::N | StatusFlags::C),
 
             // SBC
             (SBC_IMM, 0x02, 0x01, false, 0x00, StatusFlags::RESERVED | StatusFlags::C | StatusFlags::Z),
