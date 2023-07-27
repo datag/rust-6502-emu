@@ -106,18 +106,7 @@ impl Memory {
     }
 
     pub fn write_i8<T: Into<Option<u16>>>(&mut self, addr: T, value: i8) {
-        let write_addr: u16;
-        match addr.into() {
-            Some(addr) => write_addr = addr,
-            None => {
-                match self.current_write_addr {
-                    Some(addr) => write_addr = addr,
-                    None => panic!("No address provided and no previous write has occurred."),
-                }
-            }
-        }
-        self.data[write_addr as usize] = value as u8;
-        self.current_write_addr = Some(write_addr.wrapping_add(1));
+        self.write_u8(addr, value as u8);
     }
 
     pub fn write_u16<T: Into<Option<u16>>>(&mut self, addr: T, value: u16) {
