@@ -5,9 +5,9 @@ use rust_6502_emu::{Config, Verbosity};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// Maximum cycles to execute
-    #[arg(default_value_t = 1)]
-    cycles_to_execute: u64,
+    /// Cycles to execute
+    #[arg(short,long)]
+    cycles: Option<u64>,
 
     /// Load demo data
     #[arg(short, long)]
@@ -33,7 +33,7 @@ fn main() {
     };
 
     let config = Config {
-        cycles_to_execute: args.cycles_to_execute,
+        cycles_to_execute: args.cycles,
         load_demo: args.demo,
         load_file: args.file,
         verbosity,

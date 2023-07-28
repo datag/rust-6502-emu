@@ -103,9 +103,6 @@ impl Cpu {
     }
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u64) {
-        // println!("[before   ] {:?}", &self);
-        self.dump_state(mem);
-
         let mut cycles_to_execute = max_cycles;
         let mut opcode: u8;
         let mut cur_addr: u16;
@@ -135,7 +132,6 @@ impl Cpu {
                     // [debug] increase global cycles counter
                     self.cycles = self.cycles.saturating_add(cycles_consumed as u64);
 
-                    // println!("[after {:?}] {:?}\n", ins.mnemonic, self);
                     self.dump_state(mem);
                 },
                 Err(cause) => panic!("Cannot convert opcode {:02X} @ {:04X} into instruction: {}", opcode, self.pc, cause),
@@ -197,7 +193,7 @@ impl Cpu {
             info.bright_black());
     }
 
-    fn dump_state(&self, mem: &Memory) {
+    pub fn dump_state(&self, mem: &Memory) {
         let srf_n = if self.sr.contains(StatusFlags::N) { 1 } else { 0 };
         let srf_v = if self.sr.contains(StatusFlags::V) { 1 } else { 0 };
         let srf_b = if self.sr.contains(StatusFlags::B) { 1 } else { 0 };

@@ -16,7 +16,7 @@ pub enum Verbosity {
 
 pub struct Config {
     pub verbosity: Verbosity,
-    pub cycles_to_execute: u64,
+    pub cycles_to_execute: Option<u64>,
     pub load_demo: bool,
     pub load_file: Option<String>,
 }
@@ -51,9 +51,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         println!("After reset: {:#?}", cpu);
     }
 
-    cpu.exec(&mut mem, config.cycles_to_execute);
-    if config.verbosity >= Verbosity::Verbose {
-        println!("After exec: {:#?}", cpu);
+    cpu.dump_state(&mem);
+
+    if let Some(cycles_to_execute) = config.cycles_to_execute {
+        cpu.exec(&mut mem, cycles_to_execute);
+    } else {
+        loop {
+            cpu.exec(&mut mem, 1);
+        }
     }
 
     Ok(())
