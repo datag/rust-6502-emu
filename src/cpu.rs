@@ -120,7 +120,7 @@ impl Cpu {
                     self.dump_ins(mem, &ins);
             
                     // advance PC by instruction bytes
-                    self.pc += ins.bytes as u16;
+                    self.pc += ins.bytes() as u16;
 
                     // handle the opcode
                     let cycles_additional = self.handle_opcode(mem, &ins, cur_addr);
@@ -142,7 +142,7 @@ impl Cpu {
     fn dump_ins(&self, mem: &Memory, ins: &Instruction) {
         let addr_operand = self.pc.wrapping_add(1);
 
-        let oper_bytestr = match ins.bytes {
+        let oper_bytestr = match ins.bytes() {
             2 => format!("{:02X}   ", mem.read_u8(addr_operand)),
             3 => format!("{:02X} {:02X}", mem.read_u8(addr_operand), mem.read_u8(addr_operand.wrapping_add(1))),
             _ => String::from("     "),
@@ -150,11 +150,11 @@ impl Cpu {
 
         let opcode = format!("{:02X}", ins.opcode);
         
-        let oper = match ins.bytes {
+        let oper = match ins.bytes() {
             1 => if ins.addr_mode == AddressingMode::ACC { "A".to_owned() } else { String::new() },
             2 => format!("${:02X}", mem.read_u8(addr_operand)),
             3 => format!("${:04X}", mem.read_u16(addr_operand)),
-            _ => panic!("Unexpected number of bytes {} for instruction", ins.bytes),
+            _ => panic!("Unexpected number of bytes {} for instruction", ins.bytes()),
         };
 
         let operands = ins.addr_mode.operands().replace("oper", &oper);
@@ -432,7 +432,7 @@ impl Cpu {
             JMP_ABS | JMP_IND => self.pc = self.fetch_addr(mem, ins, cur_addr),
 
             JSR_ABS => {
-                self.stack_push_u16(mem, self.pc - ins.bytes as u16 + 2);      // previous PC + 2
+                self.stack_push_u16(mem, self.pc - ins.bytes() as u16 + 2);      // previous PC + 2
                 self.pc = self.fetch_addr_abs(mem, cur_addr);
             },
 
@@ -442,7 +442,7 @@ impl Cpu {
             },
 
             BRK => {
-                self.stack_push_u16(mem, self.pc - ins.bytes as u16 + 2);      // previous PC + 2
+                self.stack_push_u16(mem, self.pc - ins.bytes() as u16 + 2);      // previous PC + 2
                 self.stack_push_u8(mem, self.sr.union(StatusFlags::B).bits());
                 self.sr.set(StatusFlags::I, true);
                 self.pc = mem.read_u16(VECTOR_IRQ);
