@@ -255,7 +255,7 @@ pub struct Instruction {
     pub cycles: u8,
 }
 
-impl Instruction {    
+impl Instruction {
     pub fn from_opcode(opcode: Opcode) -> Result<Self, String> {
         match opcode {
             ADC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IMM, cycles: 2 }),

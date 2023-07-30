@@ -1,4 +1,7 @@
 use std::error::Error;
+use std::io::{self, Write};
+
+use colored::Colorize;
 
 use crate::cpu::Cpu;
 use crate::mem::Memory;
@@ -19,6 +22,7 @@ pub struct Config {
     pub cycles_to_execute: Option<u64>,
     pub load_demo: bool,
     pub load_file: Option<String>,
+    pub interactive: bool,
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -53,7 +57,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
     cpu.dump_state(&mem);
 
-    if let Some(cycles_to_execute) = config.cycles_to_execute {
+    if config.interactive {
+        while let Ok(user_input) = get_user_input() {
+            if user_input.is_empty() {
+                // probably ^D
+                break;
+            }
+            let user_input = user_input.trim();
+            if ! process_user_input(&mut cpu, &mut mem, user_input) {
+                break;
+            }
+        }
+    } else if let Some(cycles_to_execute) = config.cycles_to_execute {
         cpu.exec(&mut mem, cycles_to_execute);
     } else {
         loop {
@@ -62,4 +77,38 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+
+fn get_user_input() -> Result<String, Box<dyn Error>> {
+    let mut user_input = String::new();
+    let stdin = io::stdin();
+    print!("{} ", "?".on_blue().white().bold());
+    _ = std::io::stdout().flush();
+    stdin.read_line(&mut user_input)?;
+    Ok(user_input)
+}
+
+fn process_user_input(cpu: &mut Cpu, mem: &mut Memory, user_input: &str) -> bool {
+    let (command, _args) = user_input.split_once(' ').unwrap_or((user_input, ""));
+
+    match command {
+        "" => {},
+        "h" | "?" => {
+            println!("{}", "Help".bold());
+            println!("{} - Quit", "q".yellow().bold());
+            println!("{} - Single step", "s".yellow().bold());
+            println!("{} - Run continuously", "r".yellow().bold());
+        },
+        "q" => return false,
+        "s" => cpu.exec(mem, 1),
+        "r" => {
+            loop {
+                cpu.exec(mem, 1);
+            }
+        },
+        _ => println!("Unknown command '{command}'. Try 'h' or '?'  for help."),
+    }
+
+    true
 }

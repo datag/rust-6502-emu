@@ -69,6 +69,9 @@ The examples can be (re)build using `make all`.
 * https://www.pagetable.com/?p=410
 * https://en.wikibooks.org/wiki/6502_Assembly
 * https://codeburst.io/running-programs-on-the-apple-ii-cc183aab268
+* Testing
+  * https://www.nesdev.org/wiki/Visual6502wiki/6502TestPrograms
+  * https://github.com/Klaus2m5/6502_65C02_functional_tests
 
 ## Tools
 

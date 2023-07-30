@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::{fmt,cmp};
 use bitflags::bitflags;
 use colored::Colorize;
-use crate::instruction::{Opcode,Opcode::*,Mnemonic,AddressingMode,Instruction};
+use crate::instruction::{Opcode::*,Mnemonic,AddressingMode,Instruction};
 use crate::mem::Memory;
 
 pub const VECTOR_NMI: u16 = 0xFFFA;                     // 0xFFFA LB, 0xFFFB HB NMI vector
@@ -341,7 +341,7 @@ impl Cpu {
     }
     
     fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
-        let opcode: Opcode = ins.opcode;
+        let opcode = ins.opcode;
         let mut cycles_additional = 0;
 
         match opcode {

@@ -17,6 +17,10 @@ struct Cli {
     #[arg(short, long)]
     file: Option<String>,
 
+    /// Interactive mode
+    #[arg(short, long)]
+    interactive: bool,
+
     /// Verbosity; can be specified multiple times
     #[arg(short, long, action = clap::ArgAction::Count, default_value_t = 0)]
     verbose: u8,
@@ -36,6 +40,7 @@ fn main() {
         cycles_to_execute: args.cycles,
         load_demo: args.demo,
         load_file: args.file,
+        interactive: args.interactive,
         verbosity,
     };
 
