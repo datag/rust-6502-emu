@@ -1,229 +1,262 @@
 use std::fmt;
+use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
+
 use AddressingMode::*;
+use Opcode::*;
 
-// ADC - Add with Carry
-pub const ADC_IMM: u8 = 0x69;
-pub const ADC_ZPG: u8 = 0x65;
-pub const ADC_ZPX: u8 = 0x75;
-pub const ADC_ABS: u8 = 0x6D;
-pub const ADC_ABX: u8 = 0x7D;
-pub const ADC_ABY: u8 = 0x79;
-pub const ADC_IDX: u8 = 0x61;
-pub const ADC_IDY: u8 = 0x71;
+#[allow(non_camel_case_types)]
+#[derive(Debug, FromPrimitive, PartialEq, Copy, Clone)]
+#[repr(u8)]
+pub enum Opcode {
+    // ADC - Add with Carry
+    ADC_IMM = 0x69,
+    ADC_ZPG = 0x65,
+    ADC_ZPX = 0x75,
+    ADC_ABS = 0x6D,
+    ADC_ABX = 0x7D,
+    ADC_ABY = 0x79,
+    ADC_IDX = 0x61,
+    ADC_IDY = 0x71,
 
-// SBC - Subtract Memory from Accumulator with Borrow
-pub const SBC_IMM: u8 = 0xE9;
-pub const SBC_ZPG: u8 = 0xE5;
-pub const SBC_ZPX: u8 = 0xF5;
-pub const SBC_ABS: u8 = 0xED;
-pub const SBC_ABX: u8 = 0xFD;
-pub const SBC_ABY: u8 = 0xF9;
-pub const SBC_IDX: u8 = 0xE1;
-pub const SBC_IDY: u8 = 0xF1;
+    // SBC - Subtract Memory from Accumulator with Borrow
+    SBC_IMM = 0xE9,
+    SBC_ZPG = 0xE5,
+    SBC_ZPX = 0xF5,
+    SBC_ABS = 0xED,
+    SBC_ABX = 0xFD,
+    SBC_ABY = 0xF9,
+    SBC_IDX = 0xE1,
+    SBC_IDY = 0xF1,
 
-// CMP - Compare Memory with Accumulator
-pub const CMP_IMM: u8 = 0xC9;
-pub const CMP_ZPG: u8 = 0xC5;
-pub const CMP_ZPX: u8 = 0xD5;
-pub const CMP_ABS: u8 = 0xCD;
-pub const CMP_ABX: u8 = 0xDD;
-pub const CMP_ABY: u8 = 0xD9;
-pub const CMP_IDX: u8 = 0xC1;
-pub const CMP_IDY: u8 = 0xD1;
+    // CMP - Compare Memory with Accumulator
+    CMP_IMM = 0xC9,
+    CMP_ZPG = 0xC5,
+    CMP_ZPX = 0xD5,
+    CMP_ABS = 0xCD,
+    CMP_ABX = 0xDD,
+    CMP_ABY = 0xD9,
+    CMP_IDX = 0xC1,
+    CMP_IDY = 0xD1,
 
-// CPX Compare Memory and Index X
-pub const CPX_IMM: u8 = 0xE0;
-pub const CPX_ZPG: u8 = 0xE4;
-pub const CPX_ABS: u8 = 0xEC;
+    // CPX Compare Memory and Index X
+    CPX_IMM = 0xE0,
+    CPX_ZPG = 0xE4,
+    CPX_ABS = 0xEC,
 
-// CPY Compare Memory and Index Y
-pub const CPY_IMM: u8 = 0xC0;
-pub const CPY_ZPG: u8 = 0xC4;
-pub const CPY_ABS: u8 = 0xCC;
+    // CPY Compare Memory and Index Y
+    CPY_IMM = 0xC0,
+    CPY_ZPG = 0xC4,
+    CPY_ABS = 0xCC,
 
-// Branches
-pub const BCC_REL: u8 = 0x90;   // BCC - Branch on Carry Clear
-pub const BCS_REL: u8 = 0xB0;   // BCS - Branch on Carry Set
-pub const BEQ_REL: u8 = 0xF0;   // BEQ - Branch on Result Zero
-pub const BNE_REL: u8 = 0xD0;   // BNE - Branch on Result not Zero
-pub const BPL_REL: u8 = 0x10;   // BPL - Branch on Result Plus
-pub const BMI_REL: u8 = 0x30;   // BMI - Branch on Result Minus
-pub const BVC_REL: u8 = 0x50;   // BVC - Branch on Overflow Clear
-pub const BVS_REL: u8 = 0x70;   // BVS - Branch on Overflow Set
+    // Branches
+    BCC_REL = 0x90,   // BCC - Branch on Carry Clear
+    BCS_REL = 0xB0,   // BCS - Branch on Carry Set
+    BEQ_REL = 0xF0,   // BEQ - Branch on Result Zero
+    BNE_REL = 0xD0,   // BNE - Branch on Result not Zero
+    BPL_REL = 0x10,   // BPL - Branch on Result Plus
+    BMI_REL = 0x30,   // BMI - Branch on Result Minus
+    BVC_REL = 0x50,   // BVC - Branch on Overflow Clear
+    BVS_REL = 0x70,   // BVS - Branch on Overflow Set
 
-// BIT - Test Bits in Memory with Accumulator
-pub const BIT_ZPG: u8 = 0x24;
-pub const BIT_ABS: u8 = 0x2C;
+    // BIT - Test Bits in Memory with Accumulator
+    BIT_ZPG = 0x24,
+    BIT_ABS = 0x2C,
 
-// ASL - Shift Left One Bit (Memory or Accumulator)
-pub const ASL_ACC: u8 = 0x0A;
-pub const ASL_ZPG: u8 = 0x06;
-pub const ASL_ZPX: u8 = 0x16;
-pub const ASL_ABS: u8 = 0x0E;
-pub const ASL_ABX: u8 = 0x1E;
+    // ASL - Shift Left One Bit (Memory or Accumulator)
+    ASL_ACC = 0x0A,
+    ASL_ZPG = 0x06,
+    ASL_ZPX = 0x16,
+    ASL_ABS = 0x0E,
+    ASL_ABX = 0x1E,
 
-// LSR -  Shift One Bit Right (Memory or Accumulator)
-pub const LSR_ACC: u8 = 0x4A;
-pub const LSR_ZPG: u8 = 0x46;
-pub const LSR_ZPX: u8 = 0x56;
-pub const LSR_ABS: u8 = 0x4E;
-pub const LSR_ABX: u8 = 0x5E;
+    // LSR -  Shift One Bit Right (Memory or Accumulator)
+    LSR_ACC = 0x4A,
+    LSR_ZPG = 0x46,
+    LSR_ZPX = 0x56,
+    LSR_ABS = 0x4E,
+    LSR_ABX = 0x5E,
 
-// ROL - Rotate One Bit Left (Memory or Accumulator)
-pub const ROL_ACC: u8 = 0x2A;
-pub const ROL_ZPG: u8 = 0x26;
-pub const ROL_ZPX: u8 = 0x36;
-pub const ROL_ABS: u8 = 0x2E;
-pub const ROL_ABX: u8 = 0x3E;
+    // ROL - Rotate One Bit Left (Memory or Accumulator)
+    ROL_ACC = 0x2A,
+    ROL_ZPG = 0x26,
+    ROL_ZPX = 0x36,
+    ROL_ABS = 0x2E,
+    ROL_ABX = 0x3E,
 
-// ROR - Rotate One Bit Right (Memory or Accumulator)
-pub const ROR_ACC: u8 = 0x6A;
-pub const ROR_ZPG: u8 = 0x66;
-pub const ROR_ZPX: u8 = 0x76;
-pub const ROR_ABS: u8 = 0x6E;
-pub const ROR_ABX: u8 = 0x7E;
+    // ROR - Rotate One Bit Right (Memory or Accumulator)
+    ROR_ACC = 0x6A,
+    ROR_ZPG = 0x66,
+    ROR_ZPX = 0x76,
+    ROR_ABS = 0x6E,
+    ROR_ABX = 0x7E,
 
-// AND - AND Memory with Accumulator
-pub const AND_IMM: u8 = 0x29;
-pub const AND_ZPG: u8 = 0x25;
-pub const AND_ZPX: u8 = 0x35;
-pub const AND_ABS: u8 = 0x2D;
-pub const AND_ABX: u8 = 0x3D;
-pub const AND_ABY: u8 = 0x39;
-pub const AND_IDX: u8 = 0x21;
-pub const AND_IDY: u8 = 0x31;
+    // AND - AND Memory with Accumulator
+    AND_IMM = 0x29,
+    AND_ZPG = 0x25,
+    AND_ZPX = 0x35,
+    AND_ABS = 0x2D,
+    AND_ABX = 0x3D,
+    AND_ABY = 0x39,
+    AND_IDX = 0x21,
+    AND_IDY = 0x31,
 
-// EOR - Exclusive-OR Memory with Accumulator
-pub const EOR_IMM: u8 = 0x49;
-pub const EOR_ZPG: u8 = 0x45;
-pub const EOR_ZPX: u8 = 0x55;
-pub const EOR_ABS: u8 = 0x4D;
-pub const EOR_ABX: u8 = 0x5D;
-pub const EOR_ABY: u8 = 0x59;
-pub const EOR_IDX: u8 = 0x41;
-pub const EOR_IDY: u8 = 0x51;
+    // EOR - Exclusive-OR Memory with Accumulator
+    EOR_IMM = 0x49,
+    EOR_ZPG = 0x45,
+    EOR_ZPX = 0x55,
+    EOR_ABS = 0x4D,
+    EOR_ABX = 0x5D,
+    EOR_ABY = 0x59,
+    EOR_IDX = 0x41,
+    EOR_IDY = 0x51,
 
-// ORA - OR Memory with Accumulator
-pub const ORA_IMM: u8 = 0x09;
-pub const ORA_ZPG: u8 = 0x05;
-pub const ORA_ZPX: u8 = 0x15;
-pub const ORA_ABS: u8 = 0x0D;
-pub const ORA_ABX: u8 = 0x1D;
-pub const ORA_ABY: u8 = 0x19;
-pub const ORA_IDX: u8 = 0x01;
-pub const ORA_IDY: u8 = 0x11;
+    // ORA - OR Memory with Accumulator
+    ORA_IMM = 0x09,
+    ORA_ZPG = 0x05,
+    ORA_ZPX = 0x15,
+    ORA_ABS = 0x0D,
+    ORA_ABX = 0x1D,
+    ORA_ABY = 0x19,
+    ORA_IDX = 0x01,
+    ORA_IDY = 0x11,
 
-// Flag Instructions
-pub const CLC: u8 = 0x18;
-pub const CLD: u8 = 0xD8;
-pub const CLI: u8 = 0x58;
-pub const CLV: u8 = 0xB8;
-pub const SEC: u8 = 0x38;
-pub const SED: u8 = 0xF8;
-pub const SEI: u8 = 0x78;
+    // Flag Instructions
+    CLC = 0x18,
+    CLD = 0xD8,
+    CLI = 0x58,
+    CLV = 0xB8,
+    SEC = 0x38,
+    SED = 0xF8,
+    SEI = 0x78,
 
-// INC - Increment Memory by One
-pub const INC_ZPG: u8 = 0xE6;
-pub const INC_ZPX: u8 = 0xF6;
-pub const INC_ABS: u8 = 0xEE;
-pub const INC_ABX: u8 = 0xFE;
+    // INC - Increment Memory by One
+    INC_ZPG = 0xE6,
+    INC_ZPX = 0xF6,
+    INC_ABS = 0xEE,
+    INC_ABX = 0xFE,
 
-// Increment Index by One
-pub const INX: u8 = 0xE8;   // INX - Increment Index X by One
-pub const INY: u8 = 0xC8;   // INY - Increment Index Y by One
+    // Increment Index by One
+    INX = 0xE8,   // INX - Increment Index X by One
+    INY = 0xC8,   // INY - Increment Index Y by One
 
-// DEC - Decrement Memory by One
-pub const DEC_ZPG: u8 = 0xC6;
-pub const DEC_ZPX: u8 = 0xD6;
-pub const DEC_ABS: u8 = 0xCE;
-pub const DEC_ABX: u8 = 0xDE;
+    // DEC - Decrement Memory by One
+    DEC_ZPG = 0xC6,
+    DEC_ZPX = 0xD6,
+    DEC_ABS = 0xCE,
+    DEC_ABX = 0xDE,
 
-// Decrement Index by One
-pub const DEX: u8 = 0xCA;   // DEX - Decrement Index X by One
-pub const DEY: u8 = 0x88;   // DEY - Decrement Index Y by One
+    // Decrement Index by One
+    DEX = 0xCA,   // DEX - Decrement Index X by One
+    DEY = 0x88,   // DEY - Decrement Index Y by One
 
-// JMP - Jump to New Location
-pub const JMP_ABS: u8 = 0x4C;
-pub const JMP_IND: u8 = 0x6C;
+    // JMP - Jump to New Location
+    JMP_ABS = 0x4C,
+    JMP_IND = 0x6C,
 
-pub const JSR_ABS: u8 = 0x20;
-pub const RTS: u8 = 0x60;
+    JSR_ABS = 0x20,
+    RTS = 0x60,
 
-// LDA - Load Accumulator with Memory
-pub const LDA_IMM: u8 = 0xA9;
-pub const LDA_ZPG: u8 = 0xA5;
-pub const LDA_ZPX: u8 = 0xB5;
-pub const LDA_ABS: u8 = 0xAD;
-pub const LDA_ABX: u8 = 0xBD;
-pub const LDA_ABY: u8 = 0xB9;
-pub const LDA_IDX: u8 = 0xA1;
-pub const LDA_IDY: u8 = 0xB1;
+    // LDA - Load Accumulator with Memory
+    LDA_IMM = 0xA9,
+    LDA_ZPG = 0xA5,
+    LDA_ZPX = 0xB5,
+    LDA_ABS = 0xAD,
+    LDA_ABX = 0xBD,
+    LDA_ABY = 0xB9,
+    LDA_IDX = 0xA1,
+    LDA_IDY = 0xB1,
 
-// LDX - Load Index X with Memory
-pub const LDX_IMM: u8 = 0xA2;
-pub const LDX_ZPG: u8 = 0xA6;
-pub const LDX_ZPY: u8 = 0xB6;
-pub const LDX_ABS: u8 = 0xAE;
-pub const LDX_ABY: u8 = 0xBE;
+    // LDX - Load Index X with Memory
+    LDX_IMM = 0xA2,
+    LDX_ZPG = 0xA6,
+    LDX_ZPY = 0xB6,
+    LDX_ABS = 0xAE,
+    LDX_ABY = 0xBE,
 
-// LDY - Load Index Y with Memory
-pub const LDY_IMM: u8 = 0xA0;
-pub const LDY_ZPG: u8 = 0xA4;
-pub const LDY_ZPY: u8 = 0xB4;
-pub const LDY_ABS: u8 = 0xAC;
-pub const LDY_ABY: u8 = 0xBC;
+    // LDY - Load Index Y with Memory
+    LDY_IMM = 0xA0,
+    LDY_ZPG = 0xA4,
+    LDY_ZPY = 0xB4,
+    LDY_ABS = 0xAC,
+    LDY_ABY = 0xBC,
 
-// STA - Store Accumulator in Memory
-pub const STA_ZPG: u8 = 0x85;
-pub const STA_ZPX: u8 = 0x95;
-pub const STA_ABS: u8 = 0x8D;
-pub const STA_ABX: u8 = 0x9D;
-pub const STA_ABY: u8 = 0x99;
-pub const STA_IDX: u8 = 0x81;
-pub const STA_IDY: u8 = 0x91;
+    // STA - Store Accumulator in Memory
+    STA_ZPG = 0x85,
+    STA_ZPX = 0x95,
+    STA_ABS = 0x8D,
+    STA_ABX = 0x9D,
+    STA_ABY = 0x99,
+    STA_IDX = 0x81,
+    STA_IDY = 0x91,
 
-// STX - Store Index X in Memory
-pub const STX_ZPG: u8 = 0x86;
-pub const STX_ZPY: u8 = 0x96;
-pub const STX_ABS: u8 = 0x8E;
+    // STX - Store Index X in Memory
+    STX_ZPG = 0x86,
+    STX_ZPY = 0x96,
+    STX_ABS = 0x8E,
 
-// STY - Store Index Y in Memory
-pub const STY_ZPG: u8 = 0x84;
-pub const STY_ZPX: u8 = 0x94;
-pub const STY_ABS: u8 = 0x8C;
+    // STY - Store Index Y in Memory
+    STY_ZPG = 0x84,
+    STY_ZPX = 0x94,
+    STY_ABS = 0x8C,
 
-// Interregister transfer
-pub const TAX: u8 = 0xAA;
-pub const TAY: u8 = 0xA8;
-pub const TSX: u8 = 0xBA;
-pub const TXA: u8 = 0x8A;
-pub const TXS: u8 = 0x9A;
-pub const TYA: u8 = 0x98;
+    // Interregister transfer
+    TAX = 0xAA,
+    TAY = 0xA8,
+    TSX = 0xBA,
+    TXA = 0x8A,
+    TXS = 0x9A,
+    TYA = 0x98,
 
-// Stack Instructions
-pub const PHA: u8 = 0x48;
-pub const PHP: u8 = 0x08;
-pub const PLA: u8 = 0x68;
-pub const PLP: u8 = 0x28;
+    // Stack Instructions
+    PHA = 0x48,
+    PHP = 0x08,
+    PLA = 0x68,
+    PLP = 0x28,
 
-// NOP - No Operation
-pub const NOP: u8 = 0xEA;
+    // NOP - No Operation
+    NOP = 0xEA,
 
-// BRK - Force Break
-pub const BRK: u8 = 0x00;
+    // BRK - Force Break
+    BRK = 0x00,
 
-// RTI - Return from Interrupt
-pub const RTI: u8 = 0x40;
+    // RTI - Return from Interrupt
+    RTI = 0x40,
+}
+
+impl fmt::UpperHex for Opcode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = *self as u8;
+
+        fmt::UpperHex::fmt(&val, f) // delegate to u8's implementation
+    }
+}
+
+impl From<u8> for Opcode {
+    fn from(byte: u8) -> Self {
+        if let Some(opcode) = Opcode::from_u8(byte) {
+            opcode
+        } else {
+            panic!("Could not convert {:02X} into an Opcode", byte)
+        }
+    }
+}
+
+impl From<Opcode> for u8 {
+    fn from(item: Opcode) -> Self {
+        item as u8
+    }
+}
 
 pub struct Instruction {
-    pub opcode: u8,
+    pub opcode: Opcode,
     pub mnemonic: Mnemonic,
     pub addr_mode: AddressingMode,
     pub cycles: u8,
 }
 
-impl Instruction {
-    pub fn from_opcode(opcode: u8) -> Result<Self, String> {
+impl Instruction {    
+    pub fn from_opcode(opcode: Opcode) -> Result<Self, String> {
         match opcode {
             ADC_IMM => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: IMM, cycles: 2 }),
             ADC_ZPG => Ok(Self { opcode, mnemonic: Mnemonic::ADC, addr_mode: ZPG, cycles: 3 }),
@@ -406,8 +439,6 @@ impl Instruction {
 
             BRK     => Ok(Self { opcode, mnemonic: Mnemonic::BRK, addr_mode: IMP, cycles: 7 }),
             RTI     => Ok(Self { opcode, mnemonic: Mnemonic::RTI, addr_mode: IMP, cycles: 6 }),
-
-            _ => Err(format!("Instruction for opcode {:02X} does not exist or is not implemented", opcode)),
         }
     }
 

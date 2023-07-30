@@ -8,4 +8,6 @@ edition = "2021"
 bitflags = "2.3.3"                                               # https://crates.io/crates/bitflags
 clap = { version = "4.3.17", features = ["derive", "color"] }    # https://docs.rs/clap/latest/clap/
 colored = "2.0.4"
+num-derive = "0.4.0"
+num-traits = "0.2.16"
 

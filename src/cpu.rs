@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::{fmt,cmp};
 use bitflags::bitflags;
 use colored::Colorize;
-use crate::instruction::*;
+use crate::instruction::{Opcode,Opcode::*,Mnemonic,AddressingMode,Instruction};
 use crate::mem::Memory;
 
 pub const VECTOR_NMI: u16 = 0xFFFA;                     // 0xFFFA LB, 0xFFFB HB NMI vector
@@ -104,17 +104,17 @@ impl Cpu {
 
     pub fn exec(&mut self, mem: &mut Memory, max_cycles: u64) {
         let mut cycles_to_execute = max_cycles;
-        let mut opcode: u8;
+        let mut opcode_byte: u8;
         let mut cur_addr: u16;
 
         while cycles_to_execute > 0 {
             // load instruction from mem at PC
-            opcode = mem.read_u8(self.pc);
+            opcode_byte = mem.read_u8(self.pc);
 
             // advance read address by 1 read opcode byte
             cur_addr = self.pc + 1;
 
-            let result = Instruction::from_opcode(opcode);
+            let result = Instruction::from_opcode(opcode_byte.into());
             match result {
                 Ok(ins) => {
                     self.dump_ins(mem, &ins);
@@ -134,7 +134,7 @@ impl Cpu {
 
                     self.dump_state(mem);
                 },
-                Err(cause) => panic!("Cannot convert opcode {:02X} @ {:04X} into instruction: {}", opcode, self.pc, cause),
+                Err(cause) => panic!("Cannot convert opcode {:02X} @ {:04X} into instruction: {}", opcode_byte, self.pc, cause),
             }
         }
     }
@@ -341,7 +341,7 @@ impl Cpu {
     }
     
     fn handle_opcode(&mut self, mem: &mut Memory, ins: &Instruction, cur_addr: u16) -> u8 {
-        let opcode = ins.opcode;
+        let opcode: Opcode = ins.opcode;
         let mut cycles_additional = 0;
 
         match opcode {
@@ -451,7 +451,7 @@ impl Cpu {
                     self.dump_state(mem);
                     panic!("Reset vector points to $0000 (uninitialized) and I'm guessing we're done. Exiting.");
                 }
-                if mem.read_u8(self.pc) == BRK {
+                if mem.read_u8(self.pc) == BRK.into() {
                     self.dump_state(mem);
                     panic!("Instruction pointed to by reset vector is BRK ($00), which in fact is an infinite loop. Exiting.");
                 }
@@ -690,8 +690,6 @@ impl Cpu {
                 ssr.set(StatusFlags::B, self.sr.contains(StatusFlags::B));
                 self.sr = ssr;
             },
-
-            _ => panic!("Unimplemented or invalid instruction {:02X} @{:04X}", opcode, cur_addr - 1 /* current read addr minus opcode byte */),
         }
 
         cycles_additional
@@ -787,7 +785,7 @@ mod tests {
         let addr_expected: u16 = addr as u16;
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_zpg(&mem, ADDR_RESET_VECTOR + 1);
@@ -807,7 +805,7 @@ mod tests {
         cpu.reset(&mut mem);
         cpu.x = 0x0F;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u8(None, addr);
         let addr_effective = cpu.fetch_addr_zpx(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -817,7 +815,7 @@ mod tests {
         cpu.reset(&mut mem);
         cpu.y = 0x0F;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u8(None, addr);
         let addr_effective = cpu.fetch_addr_zpy(&mem, ADDR_RESET_VECTOR + 1);
         println!("addr: {:02X}  expected_addr: {:04X}  effective addr: {:04X}", addr, addr_expected, addr_effective);
@@ -833,7 +831,7 @@ mod tests {
         let addr_expected: u16 = addr;
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_abs(&mem, ADDR_RESET_VECTOR + 1);
@@ -853,7 +851,7 @@ mod tests {
         cpu.x = 0x0F;
         let addr_expected: u16 = addr.wrapping_add(cpu.x as u16);
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_abx(&mem, ADDR_RESET_VECTOR + 1);
@@ -865,7 +863,7 @@ mod tests {
         cpu.y = 0x0F;
         let addr_expected: u16 = addr.wrapping_add(cpu.y as u16);
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_aby(&mem, ADDR_RESET_VECTOR + 1);
@@ -883,7 +881,7 @@ mod tests {
         let data: u8 = 0xAA;
         mem.write_u16(addr, addr_expected);     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u16(None, addr);
 
         let addr_effective = cpu.fetch_addr_ind(&mem, ADDR_RESET_VECTOR + 1);
@@ -904,7 +902,7 @@ mod tests {
         cpu.x = 3;
         mem.write_u16(addr.wrapping_add(cpu.x) as u16, addr_expected);     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_idx(&mem, ADDR_RESET_VECTOR + 1);
@@ -917,7 +915,7 @@ mod tests {
         cpu.y = 3;
         mem.write_u16(addr as u16, addr_expected.wrapping_sub(cpu.y as u16));     // address holds indirect address
         mem.write_u8(addr_expected, data);      // indirect address holds data
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_u8(None, addr);
 
         let addr_effective = cpu.fetch_addr_idy(&mem, ADDR_RESET_VECTOR + 1);
@@ -934,7 +932,7 @@ mod tests {
         let addr_expected: u16 = cpu.pc.wrapping_add(addr as u16);
         let data: u8 = 0xAA;
         mem.write_u8(addr_expected, data);
-        mem.write_u8(ADDR_RESET_VECTOR, NOP /* opcode does not matter */);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into() /* opcode does not matter */);
         mem.write_i8(None, addr);
 
         let addr_effective = cpu.fetch_addr_rel(&mem, ADDR_RESET_VECTOR + 1);
@@ -947,7 +945,7 @@ mod tests {
     fn ins_nop() {
         let (mut cpu, mut mem) = setup();
 
-        mem.write_u8(ADDR_RESET_VECTOR, NOP);
+        mem.write_u8(ADDR_RESET_VECTOR, NOP.into());
         let pc_orig = cpu.pc;
         cpu.exec(&mut mem, 1);
 
@@ -978,7 +976,7 @@ mod tests {
             cpu.reset(&mut mem);
             cpu.ac = ac;
             cpu.sr.set(StatusFlags::C, carry);
-            mem.write_u8(ADDR_RESET_VECTOR, opcode);
+            mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
             mem.write_u8(None, value);
             cpu.exec(&mut mem, 1);
             assert_eq!(cpu.ac, value_expect);
@@ -1006,7 +1004,7 @@ mod tests {
                     Mnemonic::CPY => cpu.y = value_reg,
                     _ => panic!("Unhandled mnemonic for compare test {:?}", ins.mnemonic),
                 };
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 mem.write_u8(None, value_imm);
                 cpu.exec(&mut mem, 1);
                 assert_eq!(cpu.sr, sr_expect);
@@ -1022,7 +1020,7 @@ mod tests {
 
         // JMP ABS
         cpu.reset(&mut mem);
-        mem.write_u8(ADDR_RESET_VECTOR, JMP_ABS);
+        mem.write_u8(ADDR_RESET_VECTOR, JMP_ABS.into());
         mem.write_u16(None, target_addr);
         cpu.exec(&mut mem, 1);
         assert_eq!(cpu.pc, target_addr);
@@ -1030,7 +1028,7 @@ mod tests {
         // JMP IND
         cpu.reset(&mut mem);
         mem.write_u16(target_addr, target_addr_ind);
-        mem.write_u8(ADDR_RESET_VECTOR, JMP_IND);
+        mem.write_u8(ADDR_RESET_VECTOR, JMP_IND.into());
         mem.write_u16(None, target_addr);
         cpu.exec(&mut mem, 1);
         assert_eq!(cpu.pc, target_addr_ind);
@@ -1052,7 +1050,7 @@ mod tests {
                 cpu.reset(&mut mem);
                 cpu.ac = ac;
                 mem.write_u8(addr, value);
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 if opcode == BIT_ZPG {
                     mem.write_u8(None, (addr & 0xFF) as u8);
                 } else {
@@ -1089,7 +1087,7 @@ mod tests {
                     mem.write_u16(addr, addr + 2);
                     mem.write_u8(addr + 2, value);
                 }
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 if opcode == AND_IMM {
                     mem.write_u8(None, value);
                 } else if matches!(opcode, AND_ZPG | AND_ZPX | AND_IDX | AND_IDY) {
@@ -1130,7 +1128,7 @@ mod tests {
                     mem.write_u16(addr, addr + 2);
                     mem.write_u8(addr + 2, value);
                 }
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 if opcode == ORA_IMM {
                     mem.write_u8(None, value);
                 } else if matches!(opcode, ORA_ZPG | ORA_ZPX | ORA_IDX | ORA_IDY) {
@@ -1171,7 +1169,7 @@ mod tests {
                     mem.write_u16(addr, addr + 2);
                     mem.write_u8(addr + 2, value);
                 }
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 if opcode == EOR_IMM {
                     mem.write_u8(None, value);
                 } else if matches!(opcode, EOR_ZPG | EOR_ZPX | EOR_IDX | EOR_IDY) {
@@ -1203,7 +1201,7 @@ mod tests {
         ] {
             cpu.reset(&mut mem);
             cpu.sr = sr_before;
-            mem.write_u8(ADDR_RESET_VECTOR, opcode);
+            mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
             cpu.exec(&mut mem, 1);
             assert_eq!(cpu.sr, sr_expect);
         }
@@ -1245,7 +1243,7 @@ mod tests {
 
                 cpu.reset(&mut mem);
                 cpu.sr.insert(srf);
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 mem.write_i8(None, rel);
 
                 let cycles_orig = cpu.cycles;
@@ -1301,7 +1299,7 @@ mod tests {
             let ins = Instruction::from_opcode(opcode).unwrap();
             
             let addr: u16 = 0xA;
-            mem.write_u8(ADDR_RESET_VECTOR, opcode);
+            mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
             if ins.addr_mode == AddressingMode::ACC {
                 cpu.ac = value;
             } else {
@@ -1329,13 +1327,13 @@ mod tests {
     fn ins_incdec() {
         let (mut cpu, mut mem) = setup();
 
-        for opcode in [INC_ZPG, INC_ZPX | INC_ABS | INC_ABX | DEC_ZPG, DEC_ZPX | DEC_ABS | DEC_ABX] {
+        for opcode in [INC_ZPG, INC_ZPX, INC_ABS, INC_ABX, DEC_ZPG, DEC_ZPX, DEC_ABS, DEC_ABX] {
             for value in [0xFE, 0xFF] {
                 let rel_addr: u8 = 0xAA;
                 let abs_addr: u16 = 0xCAFE;
 
                 cpu.reset(&mut mem);
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
 
                 let mut addr: u16;
                 match opcode {
@@ -1367,7 +1365,7 @@ mod tests {
         for opcode in [INX, INY, DEX, DEY] {
             for value in [0xFE, 0xFF] {
                 cpu.reset(&mut mem);
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 
                 match opcode {
                     INX | DEX => {
@@ -1423,7 +1421,7 @@ mod tests {
                     mem.write_u16(addr, addr + 2);
                     mem.write_u8(addr + 2, value);
                 }
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 if ins.addr_mode == AddressingMode::IMM {
                     mem.write_u8(None, value);
                 } else if matches!(ins.addr_mode, AddressingMode::ZPG | AddressingMode::ZPX | AddressingMode::ZPY | AddressingMode::IDX | AddressingMode::IDY) {
@@ -1468,7 +1466,7 @@ mod tests {
                     _ => panic!("Unhandled test case ST* {:02X}", opcode),
                 };
 
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
                 
                 if ins.addr_mode == AddressingMode::IMM {
                     mem.write_u8(None, value);
@@ -1514,7 +1512,7 @@ mod tests {
                     _ => panic!("Unhandled T** opcode {:02X}", opcode),
                 };
 
-                mem.write_u8(ADDR_RESET_VECTOR, opcode);
+                mem.write_u8(ADDR_RESET_VECTOR, opcode.into());
 
                 cpu.exec(&mut mem, 1);
 
@@ -1542,7 +1540,7 @@ mod tests {
         let sp_orig = cpu.sp;
         cpu.ac = value;
 
-        mem.write_u8(ADDR_RESET_VECTOR, PHA);
+        mem.write_u8(ADDR_RESET_VECTOR, PHA.into());
 
         cpu.exec(&mut mem, 1);
 
@@ -1558,7 +1556,7 @@ mod tests {
         let srf = StatusFlags::C;
         cpu.sr.set(srf, true);
 
-        mem.write_u8(ADDR_RESET_VECTOR, PHP);
+        mem.write_u8(ADDR_RESET_VECTOR, PHP.into());
 
         cpu.exec(&mut mem, 1);
 
@@ -1578,7 +1576,7 @@ mod tests {
 
             mem.write_u8(cpu.addr_stack(cpu.sp + 1), value);
     
-            mem.write_u8(ADDR_RESET_VECTOR, PLA);
+            mem.write_u8(ADDR_RESET_VECTOR, PLA.into());
     
             cpu.exec(&mut mem, 1);
     
@@ -1601,7 +1599,7 @@ mod tests {
 
         cpu.sr.set(StatusFlags::B, true);
 
-        mem.write_u8(ADDR_RESET_VECTOR, PLP);
+        mem.write_u8(ADDR_RESET_VECTOR, PLP.into());
 
         cpu.exec(&mut mem, 1);
 
@@ -1616,9 +1614,9 @@ mod tests {
         let addr: u16 = 0xABCD;
         let sp_orig = cpu.sp;
 
-        mem.write_u8(ADDR_RESET_VECTOR, JSR_ABS);
+        mem.write_u8(ADDR_RESET_VECTOR, JSR_ABS.into());
         mem.write_u16(None, addr);
-        mem.write_u8(None, NOP);       // next instruction
+        mem.write_u8(None, NOP.into());       // next instruction
 
         cpu.exec(&mut mem, 1);
 
@@ -1628,7 +1626,7 @@ mod tests {
 
 
         let sp_orig = cpu.sp;
-        mem.write_u8(addr, RTS);
+        mem.write_u8(addr, RTS.into());
 
         cpu.exec(&mut mem, 1);
 
@@ -1646,13 +1644,13 @@ mod tests {
 
         // prepare reset vector with ISR
         mem.write_u16(VECTOR_IRQ, addr);
-        mem.write_u8(addr, NOP);
-        mem.write_u8(addr, RTI);
+        mem.write_u8(addr, NOP.into());
+        mem.write_u8(addr, RTI.into());
 
         // break
-        mem.write_u8(ADDR_RESET_VECTOR, BRK);
+        mem.write_u8(ADDR_RESET_VECTOR, BRK.into());
         mem.write_u8(None, break_mark);      // Optional break mark
-        mem.write_u8(None, NOP);       // next instruction
+        mem.write_u8(None, NOP.into());       // next instruction
 
         cpu.exec(&mut mem, 1);
 
