@@ -574,8 +574,8 @@ impl AddressingMode {
 
     pub fn instruction_bytes(&self) -> u8 {
         match self {
-            Self::IMP | Self::ACC | Self::IMM => 1,
-            Self::ZPG | Self::ZPX | Self::ZPY | Self::REL | Self::IDX | Self::IDY => 2,
+            Self::IMP | Self::ACC => 1,
+            Self::IMM | Self::ZPG | Self::ZPX | Self::ZPY | Self::REL | Self::IDX | Self::IDY => 2,
             Self::ABS | Self::ABX | Self::ABY | Self::IND => 3,
         }
     }
