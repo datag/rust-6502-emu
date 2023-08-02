@@ -2,6 +2,14 @@
 
 My Rust learning project writing a simple 6502 emulator.
 
+> :warning: Although there are some unit tests, the functionality is not yet completely tested or proven. And some functionality such as BCD mode still needs to be implemented. This is just a tinkering project - don't expect too much!
+
+Key data:
+
+* Memory size: `64K`
+* Stack: `0x0100` to `0x01FF`
+* Reset vector address: `0xE000`
+
 ## Building
 
 ```shell
@@ -15,18 +23,16 @@ This results in the release binary `./target/release/rust-6502-emu`.
 ### Synopsis
 
 ```
-$ ./target/release/rust-6502-emu --help
-Usage: rust-6502-emu [OPTIONS] [CYCLES_TO_EXECUTE]
-
-Arguments:
-  [CYCLES_TO_EXECUTE]  Maximum cycles to execute [default: 1]
+Usage: rust-6502-emu [OPTIONS]
 
 Options:
-  -d, --demo         Load demo data
-  -f, --file <FILE>  Load data from file
-  -v, --verbose...   Verbosity; can be specified multiple times
-  -h, --help         Print help
-  -V, --version      Print version
+  -c, --cycles <CYCLES>  Cycles to execute
+  -d, --demo             Load demo data
+  -f, --file <FILE>      Load data from file
+  -i, --interactive      Interactive mode
+  -v, --verbose...       Verbosity; can be specified multiple times
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 
 ### Example invocation
@@ -34,13 +40,19 @@ Options:
 Running an example program:
 
 ```shell
-./target/release/rust-6502-emu -f examples/fibonacci.bin 100
+./target/release/rust-6502-emu -f examples/fibonacci.bin
+```
+
+Running an example program step-by-step in interactive mode:
+
+```shell
+./target/release/rust-6502-emu -i -f examples/fibonacci.bin
 ```
 
 Running with demo code:
 
 ```shell
-./target/release/rust-6502-emu -d 100
+./target/release/rust-6502-emu -d
 ```
 
 Running without a program initialized in memory is less exciting, as we're hitting a BRK as first instruction:
@@ -69,6 +81,7 @@ The examples can be (re)build using `make all`.
 * https://www.pagetable.com/?p=410
 * https://en.wikibooks.org/wiki/6502_Assembly
 * https://codeburst.io/running-programs-on-the-apple-ii-cc183aab268
+* https://en.wikipedia.org/wiki/Interrupts_in_65xx_processors
 * Testing
   * https://www.nesdev.org/wiki/Visual6502wiki/6502TestPrograms
   * https://github.com/Klaus2m5/6502_65C02_functional_tests
